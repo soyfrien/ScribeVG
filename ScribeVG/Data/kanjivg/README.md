@@ -1,11 +1,22 @@
-# Sample KanjiVG files
+# KanjiVG stroke files
 
-These eight stroke-order files (一 二 三 人 日 水 永 字) come from the
-[KanjiVG project](https://github.com/KanjiVG/kanjivg) by Ulrich Apel and
-contributors, licensed under
-[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
-ScribeVG reads them directly. Drop more KanjiVG `.svg` files here (or pick a
-folder in the app) to practice other characters.
+The `.svg` stroke-order files in this folder come from the
+[KanjiVG project](https://kanjivg.tagaini.net) ([GitHub](https://github.com/KanjiVG/kanjivg))
+by Ulrich Apel and contributors, release r20260714, licensed under
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). They are copied
+unchanged from `kanjivg-20260714-main.zip` (base forms only, no Kaisho or other variants).
+
+`tools/build_kanjivg_bundle.py` reproduces this folder: it bundles every kanji that
+KANJIDIC2 gives a school grade or an (old, 4-level) JLPT level, about 2,900, plus the
+roughly 220 parts they are built from (e.g. 亻 氵 宀 艹), 3,128 files in all.
+
+`../components.json` is derived from the same KanjiVG files (and so is also
+CC BY-SA 3.0): for each bundled kanji, its direct kanji parts from the `kvg:element`
+groups, e.g. 氷 → 水, 明 → 日 月. ScribeVG uses it to unlock a kanji only after
+you have learned its parts.
+
+ScribeVG reads the files directly. Pick another folder in the app to practice
+other KanjiVG characters.
 
 ## Meanings and readings
 
