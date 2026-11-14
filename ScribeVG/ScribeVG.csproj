@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -6,6 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- Lets the project also build (not run) on Linux/macOS, e.g. for CI on cosmic2. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationTitle>ScribeVG</ApplicationTitle>
+    <RootNamespace>ScribeVG</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Data\**\*.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Data\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Data\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>
