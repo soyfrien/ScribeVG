@@ -210,13 +210,36 @@ public partial class MainWindow : Window
         RedrawGuide();
     }
 
+    // Space: a quick tap toggles the guide; holding it shows the guide only while held.
+    private static readonly TimeSpan SpaceTapThreshold = TimeSpan.FromMilliseconds(300);
+    private DateTime? _spaceDownAt;
+
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Space toggles the stroke guide. Handled here so a focused button doesn't also "click".
-        if (e.Key == Key.Space)
+        if (e.Key != Key.Space) return;
+        e.Handled = true; // so a focused button doesn't also "click"
+        if (e.IsRepeat || _spaceDownAt is not null) return;
+
+        _spaceDownAt = DateTime.UtcNow;
+        _peeking = true;
+        RedrawGuide();
+    }
+
+    private void Window_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Space) return;
+        e.Handled = true;
+        if (_spaceDownAt is not DateTime downAt) return;
+
+        _spaceDownAt = null;
+        _peeking = false;
+        if (DateTime.UtcNow - downAt < SpaceTapThreshold)
         {
-            ShowGuideCheck.IsChecked = ShowGuideCheck.IsChecked != true;
-            e.Handled = true;
+            ShowGuideCheck.IsChecked = ShowGuideCheck.IsChecked != true; // redraws via Changed
+        }
+        else
+        {
+            RedrawGuide();
         }
     }
 
