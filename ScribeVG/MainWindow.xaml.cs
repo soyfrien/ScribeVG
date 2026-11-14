@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 
     private readonly KanjiStrokeLoader _loader = new();
     private readonly StrokeMatcher _matcher = new();
+    private readonly KanjiDictionary? _dictionary = LoadDictionary();
     private readonly List<KanjiCard> _deck = [];
     private int _cardIndex;
     private int _currentStrokeIndex;
@@ -138,6 +139,7 @@ public partial class MainWindow : Window
         if (_deck.Count == 0)
         {
             CharacterLabel.Text = "—";
+            ShowDefinition(null);
             StrokeProgressLabel.Text = "No kanji JSON found.";
             StatusLabel.Text = "The Parser CLI writes one JSON file per SVG. Point this app at that output folder.";
             GuideCanvas.Children.Clear();
@@ -259,6 +261,7 @@ public partial class MainWindow : Window
 
         var card = _deck[_cardIndex];
         CharacterLabel.Text = string.IsNullOrEmpty(card.Character) ? "—" : card.Character;
+        ShowDefinition(card.Character);
         var total = card.Strokes.Count;
         var current = Math.Min(_currentStrokeIndex + 1, Math.Max(total, 1));
         StrokeProgressLabel.Text = total == 0
@@ -274,6 +277,48 @@ public partial class MainWindow : Window
         }
 
         RedrawGuide();
+    }
+
+    private static KanjiDictionary? LoadDictionary()
+    {
+        foreach (var dir in new[]
+                 {
+                     System.IO.Path.Combine(AppContext.BaseDirectory, "Data"),
+                     System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data")
+                 })
+        {
+            var dictionary = KanjiDictionary.TryLoad(System.IO.Path.Combine(dir, "kanjidic.json"));
+            if (dictionary is not null) return dictionary;
+        }
+
+        return null;
+    }
+
+    private void ShowDefinition(string? character)
+    {
+        var info = _dictionary?.Lookup(character);
+        if (info is null)
+        {
+            MeaningLabel.Text = _dictionary is null ? "(dictionary not found)" : string.Empty;
+            ReadingsLabel.Text = string.Empty;
+            KanjiMetaLabel.Text = string.Empty;
+            return;
+        }
+
+        MeaningLabel.Text = string.Join(", ", info.Meanings.Take(4));
+
+        var readings = new List<string>();
+        if (info.OnReadings.Count > 0) readings.Add("On: " + string.Join("、", info.OnReadings));
+        if (info.KunReadings.Count > 0) readings.Add("Kun: " + string.Join("、", info.KunDisplay));
+        ReadingsLabel.Text = string.Join("\n", readings);
+
+        var meta = new List<string>();
+        if (info.StrokeCount is int strokes) meta.Add($"{strokes} stroke{(strokes == 1 ? "" : "s")}");
+        if (info.GradeDisplay is string grade) meta.Add(grade);
+        if (info.JlptDisplay is string jlpt) meta.Add(jlpt);
+        KanjiMetaLabel.Text = string.Join(" · ", meta);
+
+        MeaningLabel.ToolTip = info.Meanings.Count > 4 ? string.Join(", ", info.Meanings) : null;
     }
 
     private void ResetScores()
