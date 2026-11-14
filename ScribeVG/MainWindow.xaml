@@ -163,6 +163,28 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Example sentences (Tatoeba via UmaiKanji) with Emi Asano's recordings -->
+                <Border Background="#FFFFFFFF" CornerRadius="10" Padding="16,12" Margin="0,12,0,0"
+                        BorderBrush="#22000000" BorderThickness="1">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="Example sentences" FontSize="13" Foreground="#FF777777"
+                                       DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <Button x:Name="MoreSentencesButton" Content="More ↻" DockPanel.Dock="Right"
+                                    ToolTip="Show other example sentences for this kanji"
+                                    FontSize="13" Padding="10,2" MinHeight="30"
+                                    Visibility="Collapsed" Click="MoreSentences_Click"/>
+                        </DockPanel>
+                        <StackPanel x:Name="SentencePanel" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="AudioStatusLabel" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="#FF888888" Margin="0,6,0,0"/>
+                        <Button Content="Set audio folder…" HorizontalAlignment="Left"
+                                ToolTip="Choose the folder with Emi Asano's recordings (Umai Kanji Resources\Audio)"
+                                FontSize="13" Padding="10,2" MinHeight="32" Margin="0,6,0,0"
+                                Click="SetAudioFolder_Click"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Today: spaced-repetition queue, unlocks and weak stroke types -->
                 <Border Background="#FFFFFFFF" CornerRadius="10" Padding="16,12" Margin="0,12,0,0"
                         BorderBrush="#22000000" BorderThickness="1">

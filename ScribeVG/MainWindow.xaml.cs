@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         ConfigureInk();
         DrawBackgroundGrid();
+        InitSentences();
         if (!TryStartStudy())
         {
             TryLoadBundledSamples();
@@ -593,6 +594,7 @@ public partial class MainWindow : Window
 
     private void ShowDefinition(string? character)
     {
+        ShowSentences(character);
         var info = _dictionary?.Lookup(character);
         if (info is null)
         {
