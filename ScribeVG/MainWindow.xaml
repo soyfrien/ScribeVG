@@ -88,6 +88,19 @@
                         Margin="0,0,0,16"
                         Click="OpenFile_Click"/>
 
+                <!-- Press and hold to peek at the guide without leaving it on (works with touch, pen or mouse) -->
+                <Button x:Name="PeekButton"
+                        Content="Hold to peek at guide"
+                        Height="52"
+                        FontSize="16"
+                        Margin="0,0,0,8"
+                        PreviewMouseLeftButtonDown="Peek_Down"
+                        PreviewMouseLeftButtonUp="Peek_Up"
+                        LostMouseCapture="Peek_Up"
+                        MouseLeave="Peek_Up"
+                        TouchDown="Peek_Down"
+                        TouchUp="Peek_Up"
+                        TouchLeave="Peek_Up"/>
                 <CheckBox x:Name="ShowGuideCheck"
                           Content="Show stroke guide (Space)"
                           IsChecked="False"

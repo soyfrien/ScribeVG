@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private readonly List<KanjiCard> _deck = [];
     private int _cardIndex;
     private int _currentStrokeIndex;
+    private bool _peeking;
 
     // Scores for strokes accepted so far on the current card, and how many tries each took.
     private readonly List<int> _strokeScores = [];
@@ -192,6 +193,21 @@ public partial class MainWindow : Window
         ResetScores();
         ShowCurrentCard(keepStatus: true);
         StatusLabel.Text = "Canvas cleared.";
+    }
+
+    private void Peek_Down(object sender, RoutedEventArgs e)
+    {
+        if (_peeking) return;
+        _peeking = true;
+        RedrawGuide();
+        e.Handled = true;
+    }
+
+    private void Peek_Up(object sender, RoutedEventArgs e)
+    {
+        if (!_peeking) return;
+        _peeking = false;
+        RedrawGuide();
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -423,7 +439,7 @@ public partial class MainWindow : Window
     private void RedrawGuide()
     {
         GuideCanvas.Children.Clear();
-        if (_deck.Count == 0 || ShowGuideCheck.IsChecked != true)
+        if (_deck.Count == 0 || (ShowGuideCheck.IsChecked != true && !_peeking))
         {
             return;
         }
