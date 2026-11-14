@@ -40,8 +40,31 @@ public sealed class KanjiCard
 public sealed class StrokeMatchResult
 {
     public bool Passed { get; init; }
+
+    /// <summary>Overall 0–100 score for the stroke.</summary>
+    public int Score { get; init; }
+
+    /// <summary>How closely the path follows the reference (0–100).</summary>
+    public int ShapeScore { get; init; }
+
+    /// <summary>How close the start and end points are (0–100).</summary>
+    public int PlacementScore { get; init; }
+
+    /// <summary>How close the stroke length is to the reference (0–100).</summary>
+    public int LengthScore { get; init; }
+
+    /// <summary>True when the stroke matches much better drawn the other way round.</summary>
+    public bool Reversed { get; init; }
+
     public double DirectionScore { get; init; }
     public double StartDistance { get; init; }
     public double EndDistance { get; init; }
+
+    /// <summary>Short label such as "Excellent" or "Try again".</summary>
+    public required string Grade { get; init; }
+
+    /// <summary>One actionable tip for the weakest part of the stroke.</summary>
+    public required string Tip { get; init; }
+
     public required string Summary { get; init; }
 }

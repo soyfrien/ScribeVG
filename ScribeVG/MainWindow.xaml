@@ -42,7 +42,7 @@
                            HorizontalAlignment="Center"
                            Margin="0,8,0,4"/>
                 <TextBlock x:Name="StrokeProgressLabel"
-                           Text="Load a parsed KanjiVG JSON folder to begin"
+                           Text="Open a folder of KanjiVG files to begin"
                            FontSize="16"
                            TextWrapping="Wrap"
                            HorizontalAlignment="Center"
@@ -89,6 +89,32 @@
                             Margin="6,0,0,0"
                             Click="Next_Click"/>
                 </UniformGrid>
+
+                <!-- Feedback panel: score for the last stroke plus a running tally for the kanji -->
+                <Border Background="#FFFFFFFF" CornerRadius="10" Padding="16" Margin="0,16,0,0"
+                        BorderBrush="#22000000" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Text="Last stroke" FontSize="13" Foreground="#FF777777"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <TextBlock x:Name="ScoreLabel" Text="–" FontSize="44" FontWeight="Bold"
+                                       Foreground="#FF333333" VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="GradeLabel" Text="" FontSize="20" FontWeight="SemiBold"
+                                       Margin="10,0,0,8" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+                        <ProgressBar x:Name="ScoreBar" Height="8" Minimum="0" Maximum="100" Value="0"
+                                     Margin="0,4,0,8"/>
+                        <TextBlock x:Name="BreakdownLabel" FontSize="13" Foreground="#FF555555"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock x:Name="TipLabel" FontSize="15" TextWrapping="Wrap" Margin="0,8,0,0"/>
+
+                        <Separator Margin="0,12"/>
+
+                        <TextBlock Text="This kanji" FontSize="13" Foreground="#FF777777"/>
+                        <TextBlock x:Name="KanjiScoreLabel" Text="–" FontSize="22" FontWeight="SemiBold"
+                                   Margin="0,2,0,4"/>
+                        <WrapPanel x:Name="StrokeChips"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <TextBlock x:Name="StatusLabel"

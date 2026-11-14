@@ -8,6 +8,7 @@ using System.Windows.Shapes;
 using ScribeVG.Models;
 using ScribeVG.Services;
 using Microsoft.Win32;
+using System.Windows.Threading;
 
 namespace ScribeVG;
 
@@ -23,6 +24,16 @@ public partial class MainWindow : Window
     private readonly List<KanjiCard> _deck = [];
     private int _cardIndex;
     private int _currentStrokeIndex;
+
+    // Scores for strokes accepted so far on the current card, and how many tries each took.
+    private readonly List<int> _strokeScores = [];
+    private readonly List<int> _strokeAttempts = [];
+    private int _attemptsOnCurrentStroke;
+
+    private static readonly Color ExcellentColor = Color.FromRgb(0x2E, 0x7D, 0x32);
+    private static readonly Color GoodColor = Color.FromRgb(0x55, 0x8B, 0x2F);
+    private static readonly Color OkColor = Color.FromRgb(0xE0, 0x8E, 0x0B);
+    private static readonly Color MissColor = Color.FromRgb(0xC6, 0x28, 0x28);
     public MainWindow()
     {
         InitializeComponent();
@@ -30,7 +41,7 @@ public partial class MainWindow : Window
         DrawBackgroundGrid();
         TryLoadBundledSamples();
         StatusLabel.Text =
-            "Open a folder of JSON files produced by the Parser project, or use the bundled sample cards.";
+            "Trace the red stroke, starting at the dot. Each stroke gets a score from 0 to 100.";
     }
 
     private void ConfigureInk()
@@ -122,6 +133,7 @@ public partial class MainWindow : Window
         _cardIndex = 0;
         _currentStrokeIndex = 0;
         WritingCanvas.Strokes.Clear();
+        ResetScores();
 
         if (_deck.Count == 0)
         {
@@ -146,6 +158,7 @@ public partial class MainWindow : Window
         _cardIndex = (_cardIndex + delta + _deck.Count) % _deck.Count;
         _currentStrokeIndex = 0;
         WritingCanvas.Strokes.Clear();
+        ResetScores();
         ShowCurrentCard();
     }
 
@@ -158,6 +171,14 @@ public partial class MainWindow : Window
             _currentStrokeIndex--;
         }
 
+        if (_strokeScores.Count > 0)
+        {
+            _strokeScores.RemoveAt(_strokeScores.Count - 1);
+            _strokeAttempts.RemoveAt(_strokeAttempts.Count - 1);
+        }
+        _attemptsOnCurrentStroke = 0;
+        UpdateKanjiTally();
+
         ShowCurrentCard(keepStatus: true);
         StatusLabel.Text = "Undid the last stroke.";
     }
@@ -166,6 +187,7 @@ public partial class MainWindow : Window
     {
         WritingCanvas.Strokes.Clear();
         _currentStrokeIndex = 0;
+        ResetScores();
         ShowCurrentCard(keepStatus: true);
         StatusLabel.Text = "Canvas cleared.";
     }
@@ -195,22 +217,39 @@ public partial class MainWindow : Window
         var user = StrokeMatcher.FromInkStroke(e.Stroke, Scale);
         var canonical = card.Strokes[_currentStrokeIndex];
         var result = _matcher.Compare(canonical, user);
+        _attemptsOnCurrentStroke++;
+
+        ShowStrokeFeedback(result);
 
         if (result.Passed)
         {
+            e.Stroke.DrawingAttributes.Color = ColorFor(result.Score);
+            _strokeScores.Add(result.Score);
+            _strokeAttempts.Add(_attemptsOnCurrentStroke);
+            _attemptsOnCurrentStroke = 0;
             _currentStrokeIndex++;
             StatusLabel.Text = result.Summary;
             if (_currentStrokeIndex >= card.Strokes.Count)
             {
-                StatusLabel.Text = "All strokes accepted. Press Next when you are ready.";
+                StatusLabel.Text = "All strokes done! Press Next for another kanji, or Clear to try again.";
             }
         }
         else
         {
-            // Leave the ink visible so the user can Undo or Clear and retry.
-            StatusLabel.Text = result.Summary + " Try that stroke again, or Undo and retry.";
+            // Show the miss in red briefly, then remove it so the canvas only holds accepted strokes.
+            var missed = e.Stroke;
+            missed.DrawingAttributes.Color = MissColor;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(650) };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                WritingCanvas.Strokes.Remove(missed);
+            };
+            timer.Start();
+            StatusLabel.Text = $"{result.Summary}. Try stroke {canonical.StrokeNumber} again.";
         }
 
+        UpdateKanjiTally();
         ShowCurrentCard(keepStatus: true);
     }
 
@@ -236,6 +275,87 @@ public partial class MainWindow : Window
 
         RedrawGuide();
     }
+
+    private void ResetScores()
+    {
+        _strokeScores.Clear();
+        _strokeAttempts.Clear();
+        _attemptsOnCurrentStroke = 0;
+        ScoreLabel.Text = "–";
+        ScoreLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33));
+        GradeLabel.Text = string.Empty;
+        ScoreBar.Value = 0;
+        BreakdownLabel.Text = string.Empty;
+        TipLabel.Text = "Trace the red stroke, starting at the dot.";
+        UpdateKanjiTally();
+    }
+
+    private void ShowStrokeFeedback(StrokeMatchResult result)
+    {
+        var brush = new SolidColorBrush(result.Passed ? ColorFor(result.Score) : MissColor);
+        ScoreLabel.Text = result.Score.ToString();
+        ScoreLabel.Foreground = brush;
+        GradeLabel.Text = result.Grade;
+        GradeLabel.Foreground = brush;
+        ScoreBar.Value = result.Score;
+        ScoreBar.Foreground = brush;
+        BreakdownLabel.Text = result.Reversed
+            ? "Drawn in the wrong direction"
+            : $"Shape {result.ShapeScore} · Placement {result.PlacementScore} · Length {result.LengthScore}";
+        TipLabel.Text = result.Tip;
+    }
+
+    private void UpdateKanjiTally()
+    {
+        StrokeChips.Children.Clear();
+        if (_deck.Count == 0)
+        {
+            KanjiScoreLabel.Text = "–";
+            return;
+        }
+
+        var total = _deck[_cardIndex].Strokes.Count;
+        for (int i = 0; i < total; i++)
+        {
+            var done = i < _strokeScores.Count;
+            var color = done ? ColorFor(_strokeScores[i]) : Color.FromRgb(0xDD, 0xDD, 0xDD);
+            StrokeChips.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(color),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 4, 6, 0),
+                Padding = new Thickness(8, 3, 8, 3),
+                ToolTip = done ? $"Stroke {i + 1}: {_strokeScores[i]} ({_strokeAttempts[i]} tr{(_strokeAttempts[i] == 1 ? "y" : "ies")})" : $"Stroke {i + 1}",
+                Child = new TextBlock
+                {
+                    Text = done ? _strokeScores[i].ToString() : (i + 1).ToString(),
+                    Foreground = done ? Brushes.White : Brushes.Gray,
+                    FontSize = 14,
+                    FontWeight = FontWeights.SemiBold
+                }
+            });
+        }
+
+        if (_strokeScores.Count == 0)
+        {
+            KanjiScoreLabel.Text = "–";
+            return;
+        }
+
+        var average = (int)Math.Round(_strokeScores.Average());
+        var firstTry = _strokeAttempts.Count(a => a == 1);
+        KanjiScoreLabel.Text = _strokeScores.Count >= total
+            ? $"{average} · {StrokeMatcher.GradeFor(average)} · {firstTry}/{total} first try"
+            : $"{average} so far ({_strokeScores.Count}/{total} strokes)";
+    }
+
+    private static Color ColorFor(int score) => score switch
+    {
+        >= 90 => ExcellentColor,
+        >= 75 => GoodColor,
+        >= StrokeMatcher.PassScore => OkColor,
+        _ => MissColor
+    };
 
     private void RedrawGuide()
     {
@@ -293,6 +413,17 @@ public partial class MainWindow : Window
                 StrokeLineJoin = PenLineJoin.Round,
                 Fill = Brushes.Transparent
             });
+
+            if (i == _currentStrokeIndex)
+            {
+                // Start dot so it's clear where (and which way) to begin.
+                const double dot = 26;
+                var start = ToDesign(stroke.Points[0]);
+                var marker = new Ellipse { Width = dot, Height = dot, Fill = current };
+                Canvas.SetLeft(marker, start.X - dot / 2);
+                Canvas.SetTop(marker, start.Y - dot / 2);
+                GuideCanvas.Children.Add(marker);
+            }
         }
     }
 
