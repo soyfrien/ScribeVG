@@ -61,6 +61,13 @@
                            TextAlignment="Center"
                            HorizontalAlignment="Center"
                            Foreground="#FF888888"
+                           Margin="0,2,0,0"/>
+                <TextBlock x:Name="RadicalLabel"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Foreground="#FF555555"
                            Margin="0,2,0,10"/>
                 <TextBlock x:Name="StrokeProgressLabel"
                            Text="Open a folder of KanjiVG files to begin"

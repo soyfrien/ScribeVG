@@ -302,6 +302,7 @@ public partial class MainWindow : Window
             MeaningLabel.Text = _dictionary is null ? "(dictionary not found)" : string.Empty;
             ReadingsLabel.Text = string.Empty;
             KanjiMetaLabel.Text = string.Empty;
+            RadicalLabel.Text = string.Empty;
             return;
         }
 
@@ -317,6 +318,11 @@ public partial class MainWindow : Window
         if (info.GradeDisplay is string grade) meta.Add(grade);
         if (info.JlptDisplay is string jlpt) meta.Add(jlpt);
         KanjiMetaLabel.Text = string.Join(" · ", meta);
+
+        var radical = _dictionary!.Radical(info.RadicalNumber);
+        RadicalLabel.Text = radical is null
+            ? string.Empty
+            : $"Radical {info.RadicalNumber}: {radical.Character} ({radical.Name})";
 
         MeaningLabel.ToolTip = info.Meanings.Count > 4 ? string.Join(", ", info.Meanings) : null;
     }

@@ -15,6 +15,7 @@ public sealed class KanjiInfo
     [JsonPropertyName("jlpt")] public int? OldJlpt { get; init; }
     [JsonPropertyName("freq")] public int? Frequency { get; init; }
     [JsonPropertyName("strokes")] public int? StrokeCount { get; init; }
+    [JsonPropertyName("rad")] public int? RadicalNumber { get; init; }
 
     /// <summary>Kun readings with okurigana in parentheses, e.g. "なが.い" → "なが(い)".</summary>
     public IEnumerable<string> KunDisplay => KunReadings.Select(k =>
@@ -31,15 +32,15 @@ public sealed class KanjiInfo
         _ => null
     };
 
-    /// <summary>KANJIDIC2 uses the pre-2010 4-level JLPT; map it to the closest current level.</summary>
-    public string? JlptDisplay => OldJlpt switch
-    {
-        4 => "JLPT N5",
-        3 => "JLPT N4",
-        2 => "JLPT N3/N2",
-        1 => "JLPT N1",
-        _ => null
-    };
+    /// <summary>The original 4-level JLPT (1 hardest, 4 easiest) that KANJIDIC2 records.</summary>
+    public string? JlptDisplay => OldJlpt is int level ? $"JLPT {level}" : null;
+}
+
+/// <summary>One of the 214 classical (Kangxi) radicals.</summary>
+public sealed class RadicalInfo
+{
+    [JsonPropertyName("c")] public string Character { get; init; } = "";
+    [JsonPropertyName("name")] public string Name { get; init; } = "";
 }
 
 /// <summary>
@@ -50,12 +51,14 @@ public sealed class KanjiDictionary
 {
     private sealed class FileDto
     {
+        [JsonPropertyName("radicals")] public Dictionary<string, RadicalInfo> Radicals { get; init; } = [];
         [JsonPropertyName("source")] public string? Source { get; init; }
         [JsonPropertyName("version")] public string? Version { get; init; }
         [JsonPropertyName("kanji")] public Dictionary<string, KanjiInfo> Kanji { get; init; } = [];
     }
 
     private readonly Dictionary<string, KanjiInfo> _entries;
+    private readonly Dictionary<string, RadicalInfo> _radicals;
 
     public string? Source { get; }
     public string? Version { get; }
@@ -64,6 +67,7 @@ public sealed class KanjiDictionary
     private KanjiDictionary(FileDto dto)
     {
         _entries = dto.Kanji;
+        _radicals = dto.Radicals;
         Source = dto.Source;
         Version = dto.Version;
     }
@@ -83,6 +87,10 @@ public sealed class KanjiDictionary
             return null;
         }
     }
+
+    /// <summary>Classical (Kangxi) radical 1–214.</summary>
+    public RadicalInfo? Radical(int? number) =>
+        number is int n && _radicals.TryGetValue(n.ToString(), out var info) ? info : null;
 
     public KanjiInfo? Lookup(string? character) =>
         character is not null && _entries.TryGetValue(character, out var info) ? info : null;

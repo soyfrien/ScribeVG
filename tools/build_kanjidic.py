@@ -5,11 +5,12 @@ Download kanjidic2.xml.gz from https://www.edrdg.org/kanjidic/kanjidic2.xml.gz
 then run:  python3 tools/build_kanjidic.py kanjidic2.xml.gz ScribeVG/Data/kanjidic.json
 
 Keeps only what the app shows: English meanings, on/kun readings, nanori,
-school grade, JLPT level (old 4-level scale), stroke count and frequency rank.
+school grade, JLPT level (old 4-level scale), stroke count, frequency rank
+and classical radical (with the 214 Kangxi radical glyphs and names).
 KANJIDIC2 is (c) the Electronic Dictionary Research and Development Group,
 licensed CC BY-SA 4.0: https://www.edrdg.org/edrdg/licence.html
 """
-import gzip, json, sys, xml.etree.ElementTree as ET
+import gzip, json, sys, unicodedata, xml.etree.ElementTree as ET
 
 src, out = sys.argv[1], sys.argv[2]
 opener = gzip.open if src.endswith(".gz") else open
@@ -40,14 +41,26 @@ for ch in root.iter("character"):
     for key, tag in (("grade", "grade"), ("jlpt", "jlpt"), ("freq", "freq")):
         v = num(tag)
         if v is not None: e[key] = v
+    rad = ch.find("radical/rad_value[@rad_type='classical']")
+    if rad is not None: e["rad"] = int(rad.text)
     sc = misc.findall("stroke_count") if misc is not None else []
     if sc: e["strokes"] = int(sc[0].text)
     entries[literal] = e
+
+# The 214 classical (Kangxi) radicals: Unicode U+2F00..U+2FD5 in order, with English names.
+radicals = {}
+for n in range(1, 215):
+    symbol = chr(0x2F00 + n - 1)
+    radicals[str(n)] = {
+        "c": unicodedata.normalize("NFKC", symbol),
+        "name": unicodedata.name(symbol).removeprefix("KANGXI RADICAL ").lower(),
+    }
 
 doc = {
     "source": "KANJIDIC2, (c) EDRDG, CC BY-SA 4.0, https://www.edrdg.org/wiki/index.php/KANJIDIC_Project",
     "version": header.findtext("database_version"),
     "date": header.findtext("date_of_creation"),
+    "radicals": radicals,
     "kanji": entries,
 }
 with open(out, "w", encoding="utf-8") as f:
