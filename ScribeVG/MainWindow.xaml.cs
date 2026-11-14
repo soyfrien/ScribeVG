@@ -32,6 +32,19 @@ public partial class MainWindow : Window
     private readonly List<int> _strokeAttempts = [];
     private int _attemptsOnCurrentStroke;
 
+    // Study mode: spaced repetition over the bundled KanjiVG set.
+    private readonly ProgressStore _progress = ProgressStore.Load();
+    private StudyPlanner? _planner;
+    private string? _bundledDir;
+    private bool _studyMode;
+    private readonly List<string> _studyHistory = [];
+
+    // What happened on the current card since it was shown (survives Undo/Clear) for the auto-rating.
+    private bool _guideUsed;
+    private bool _anyReversed;
+    private bool _rated;
+    private readonly Dictionary<int, int> _failsByStroke = [];
+
     private static readonly Color ExcellentColor = Color.FromRgb(0x2E, 0x7D, 0x32);
     private static readonly Color GoodColor = Color.FromRgb(0x55, 0x8B, 0x2F);
     private static readonly Color OkColor = Color.FromRgb(0xE0, 0x8E, 0x0B);
@@ -41,9 +54,200 @@ public partial class MainWindow : Window
         InitializeComponent();
         ConfigureInk();
         DrawBackgroundGrid();
-        TryLoadBundledSamples();
-        StatusLabel.Text =
-            "Write the kanji from memory. Press Space (or tick the box) to show the stroke guide.";
+        if (!TryStartStudy())
+        {
+            TryLoadBundledSamples();
+            StatusLabel.Text =
+                "Write the kanji from memory. Press Space (or tick the box) to show the stroke guide.";
+        }
+        UpdateTodayPanel();
+        Closed += (_, _) => SaveProgress();
+    }
+
+    private static string? FindDataDir()
+    {
+        foreach (var dir in new[]
+                 {
+                     System.IO.Path.Combine(AppContext.BaseDirectory, "Data"),
+                     System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data")
+                 })
+        {
+            if (File.Exists(System.IO.Path.Combine(dir, "components.json"))) return dir;
+        }
+        return null;
+    }
+
+    private bool TryStartStudy()
+    {
+        if (_planner is null)
+        {
+            var dataDir = FindDataDir();
+            var graph = dataDir is null ? null : ComponentGraph.TryLoad(System.IO.Path.Combine(dataDir, "components.json"));
+            if (graph is null || _dictionary is null) return false;
+            _bundledDir = System.IO.Path.Combine(dataDir!, "kanjivg");
+            _planner = new StudyPlanner(graph, _dictionary.Lookup, _progress.Data);
+        }
+
+        _studyMode = true;
+        ShowNextStudyCard();
+        return true;
+    }
+
+    private void Study_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryStartStudy())
+        {
+            StatusLabel.Text = "Study mode needs Data/components.json and Data/kanjidic.json next to the app.";
+        }
+    }
+
+    private void ShowNextStudyCard(string? avoid = null)
+    {
+        if (_planner is null) return;
+        var next = _planner.Next(DateTimeOffset.Now, avoid);
+        if (next is null)
+        {
+            _deck.Clear();
+            _cardIndex = 0;
+            WritingCanvas.Strokes.Clear();
+            ResetCardTracking();
+            ResetScores();
+            GuideCanvas.Children.Clear();
+            CharacterLabel.Text = "✓";
+            ShowDefinition(null);
+            MeaningLabel.Text = "All done for today";
+            StrokeProgressLabel.Text = "No reviews due and today's new kanji are done.";
+            StatusLabel.Text = "Come back later for reviews, or open a kanji folder for free practice.";
+            UpdateTodayPanel();
+            return;
+        }
+
+        LoadStudyCard(next);
+    }
+
+    private bool LoadStudyCard(string kanji, bool remember = true)
+    {
+        if (_bundledDir is null) return false;
+        var file = System.IO.Path.Combine(_bundledDir, $"{char.ConvertToUtf32(kanji, 0):x5}.svg");
+        KanjiCard? card = null;
+        try { card = _loader.LoadFile(file); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load {file}: {ex.Message}"); }
+        if (card is null || card.Strokes.Count == 0)
+        {
+            StatusLabel.Text = $"Couldn't load {kanji}.";
+            return false;
+        }
+
+        if (remember && (_studyHistory.Count == 0 || _studyHistory[^1] != kanji)) _studyHistory.Add(kanji);
+        _deck.Clear();
+        _deck.Add(card);
+        _cardIndex = 0;
+        _currentStrokeIndex = 0;
+        WritingCanvas.Strokes.Clear();
+        ResetCardTracking();
+        ResetScores();
+        ShowCurrentCard(keepStatus: true);
+        StatusLabel.Text = StudyCardIntro(kanji);
+        UpdateTodayPanel();
+        return true;
+    }
+
+    private string StudyCardIntro(string kanji)
+    {
+        var state = _planner?.StateOf(kanji);
+        if (!WillRate(kanji)) return "Practice only: this kanji isn't due, so it won't be scheduled.";
+        return state is null || state.State == CardPhase.New
+            ? "New kanji. Press Space for the stroke guide the first time."
+            : $"Review ({state.Reps} so far). Write it from memory.";
+    }
+
+    /// <summary>Whether finishing this kanji now should count as a scheduled review.</summary>
+    private bool WillRate(string? kanji)
+    {
+        if (!_studyMode || _planner is null || kanji is null || !_planner.IsStudyCard(kanji)) return false;
+        var now = DateTimeOffset.Now;
+        var state = _planner.StateOf(kanji);
+        if (state is null || state.State == CardPhase.New)
+        {
+            return _planner.IsUnlocked(kanji) && _planner.NewQuotaLeft(now) > 0;
+        }
+        return state.Due <= now + StudyPlanner.LearnAhead;
+    }
+
+    private void ResetCardTracking()
+    {
+        _guideUsed = false;
+        _anyReversed = false;
+        _rated = false;
+        _failsByStroke.Clear();
+    }
+
+    private void SaveProgress()
+    {
+        try { _progress.Save(); }
+        catch (Exception ex) { StatusLabel.Text = $"Couldn't save progress: {ex.Message}"; }
+    }
+
+    private void FinishStudyCard(KanjiCard card)
+    {
+        if (_planner is null || _rated || !WillRate(card.Character)) return;
+        _rated = true;
+
+        var tries = Enumerable.Range(0, card.Strokes.Count)
+            .Select(i => 1 + _failsByStroke.GetValueOrDefault(i))
+            .ToList();
+        var attempt = new KanjiAttempt(_strokeScores.ToList(), tries, _guideUsed, _anyReversed);
+        var rating = PracticeRating.Rate(attempt);
+        var outcome = _planner.Record(card.Character!, rating, DateTimeOffset.Now);
+        SaveProgress();
+
+        var reasons = new List<string>();
+        if (_guideUsed) reasons.Add("used the guide");
+        if (_anyReversed) reasons.Add("a stroke went backwards");
+        if (tries.Any(t => t >= 3)) reasons.Add("a stroke took 3+ tries");
+        var why = reasons.Count > 0 ? $" ({string.Join(", ", reasons)})" : string.Empty;
+        var when = outcome.Card.Due is DateTimeOffset due ? DescribeWait(due - DateTimeOffset.Now) : "later";
+        StatusLabel.Text = $"{PracticeRating.Describe(rating)}{why}. Next review {when}. Press Next for the next kanji.";
+
+        if (outcome.Unlocked.Count > 0)
+        {
+            var shown = outcome.Unlocked.Take(3)
+                .Select(u => $"{u.Kanji} (you learned {string.Join(" ", u.Parts)})");
+            var more = outcome.Unlocked.Count > 3 ? $" and {outcome.Unlocked.Count - 3} more" : string.Empty;
+            UnlockLabel.Text = "Unlocked " + string.Join(", ", shown) + more;
+        }
+
+        UpdateTodayPanel();
+    }
+
+    private static string DescribeWait(TimeSpan wait)
+    {
+        if (wait.TotalMinutes < 60) return $"in {Math.Max(1, (int)Math.Round(wait.TotalMinutes))} min";
+        var days = (int)Math.Round(wait.TotalDays);
+        return days <= 1 ? "tomorrow" : $"in {days} days";
+    }
+
+    private void UpdateTodayPanel()
+    {
+        if (_planner is null)
+        {
+            TodayLabel.Text = "Study mode unavailable (Data/components.json missing).";
+            WeakLabel.Text = string.Empty;
+            return;
+        }
+
+        var now = DateTimeOffset.Now;
+        var due = _planner.DueCards(now).Count;
+        var newLeft = Math.Min(_planner.NewQuotaLeft(now), _planner.NewCandidates().Take(StudyPlanner.NewCardsPerDay).Count());
+        var learned = _progress.Data.Cards.Values.Count(c => c.Learned);
+        TodayLabel.Text = $"{due} due · {newLeft} new left today · {learned} learned" +
+                          (_studyMode ? string.Empty : "\n(free practice: press Study to go back)");
+
+        var weak = _planner.WeakestStrokeTypes();
+        WeakLabel.Text = weak.Count == 0
+            ? "Weak spots appear after a few strokes of each type."
+            : "Weakest strokes:\n" + string.Join("\n", weak.Select(w =>
+                $"{w.Key} {StrokeTypes.Name(w.Key)}: {w.Value.Average:F0} avg over {w.Value.Attempts}"));
     }
 
     private void ConfigureInk()
@@ -130,6 +334,8 @@ public partial class MainWindow : Window
 
     private void LoadDeck(IReadOnlyList<KanjiCard> cards)
     {
+        _studyMode = false;
+        ResetCardTracking();
         _deck.Clear();
         _deck.AddRange(cards);
         _cardIndex = 0;
@@ -148,12 +354,40 @@ public partial class MainWindow : Window
         }
 
         ShowCurrentCard();
-        StatusLabel.Text = $"Loaded {_deck.Count} character(s). Press Space to show or hide the stroke guide.";
+        StatusLabel.Text = $"Loaded {_deck.Count} character(s) for free practice. Press Space to show or hide the stroke guide.";
+        UpdateTodayPanel();
     }
 
-    private void Previous_Click(object sender, RoutedEventArgs e) => MoveCard(-1);
+    private void Previous_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_studyMode)
+        {
+            MoveCard(-1);
+            return;
+        }
 
-    private void Next_Click(object sender, RoutedEventArgs e) => MoveCard(1);
+        // Study mode: step back through the kanji shown this session.
+        if (_studyHistory.Count < 2)
+        {
+            StatusLabel.Text = "No earlier kanji this session.";
+            return;
+        }
+        _studyHistory.RemoveAt(_studyHistory.Count - 1);
+        LoadStudyCard(_studyHistory[^1], remember: false);
+    }
+
+    private void Next_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_studyMode)
+        {
+            MoveCard(1);
+            return;
+        }
+
+        // Study mode: go to the next queued kanji. Skipping an unfinished one leaves it queued.
+        var current = _deck.Count > 0 ? _deck[_cardIndex].Character : null;
+        ShowNextStudyCard(avoid: _rated ? null : current);
+    }
 
     private void MoveCard(int delta)
     {
@@ -161,6 +395,7 @@ public partial class MainWindow : Window
         _cardIndex = (_cardIndex + delta + _deck.Count) % _deck.Count;
         _currentStrokeIndex = 0;
         WritingCanvas.Strokes.Clear();
+        ResetCardTracking();
         ResetScores();
         ShowCurrentCard();
     }
@@ -277,6 +512,9 @@ public partial class MainWindow : Window
         var canonical = card.Strokes[_currentStrokeIndex];
         var result = _matcher.Compare(canonical, user);
         _attemptsOnCurrentStroke++;
+        if (result.Reversed) _anyReversed = true;
+        if (!result.Passed) _failsByStroke[_currentStrokeIndex] = _failsByStroke.GetValueOrDefault(_currentStrokeIndex) + 1;
+        _planner?.RecordStroke(canonical.StrokeType, result.Score);
 
         ShowStrokeFeedback(result);
 
@@ -291,6 +529,7 @@ public partial class MainWindow : Window
             if (_currentStrokeIndex >= card.Strokes.Count)
             {
                 StatusLabel.Text = "All strokes done! Press Next for another kanji, or Clear to try again.";
+                FinishStudyCard(card);
             }
         }
         else
@@ -310,6 +549,7 @@ public partial class MainWindow : Window
 
         UpdateKanjiTally();
         ShowCurrentCard(keepStatus: true);
+        UpdateTodayPanel();
     }
 
     private void ShowCurrentCard(bool keepStatus = false)
@@ -476,6 +716,11 @@ public partial class MainWindow : Window
         }
 
         var card = _deck[_cardIndex];
+        if (_currentStrokeIndex < card.Strokes.Count)
+        {
+            _guideUsed = true; // the guide was on screen while this kanji was being written
+        }
+
         var completed = (Brush)FindResource("GuideCompletedBrush");
         var current = (Brush)FindResource("GuideCurrentBrush");
         var upcoming = (Brush)FindResource("GuideUpcomingBrush");

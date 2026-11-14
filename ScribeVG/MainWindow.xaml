@@ -36,7 +36,8 @@
         </Viewbox>
 
         <DockPanel Grid.Column="1" Margin="20,0,0,0">
-            <StackPanel DockPanel.Dock="Top">
+            <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
                 <TextBlock x:Name="CharacterLabel"
                            Text="—"
                            FontSize="84"
@@ -78,16 +79,19 @@
                            HorizontalAlignment="Center"
                            Margin="0,0,0,16"/>
 
-                <Button Content="Open kanji folder…"
+                <Button Content="Study (due &amp; new kanji)"
+                        ToolTip="Spaced-repetition reviews first, then new kanji once their parts are learned"
                         Height="44"
                         FontSize="16"
+                        FontWeight="SemiBold"
                         Margin="0,0,0,8"
-                        Click="OpenFolder_Click"/>
-                <Button Content="Open kanji file…"
-                        Height="44"
-                        FontSize="16"
-                        Margin="0,0,0,16"
-                        Click="OpenFile_Click"/>
+                        Click="Study_Click"/>
+                <UniformGrid Columns="2" Margin="0,0,0,16">
+                    <Button Content="Open folder…" ToolTip="Free practice with a folder of KanjiVG files"
+                            Height="44" FontSize="15" Margin="0,0,6,0" Click="OpenFolder_Click"/>
+                    <Button Content="Open file…" ToolTip="Free practice with KanjiVG files"
+                            Height="44" FontSize="15" Margin="6,0,0,0" Click="OpenFile_Click"/>
+                </UniformGrid>
 
                 <!-- Press and hold to peek at the guide without leaving it on (works with touch, pen or mouse) -->
                 <Button x:Name="PeekButton"
@@ -158,7 +162,22 @@
                         <WrapPanel x:Name="StrokeChips"/>
                     </StackPanel>
                 </Border>
+
+                <!-- Today: spaced-repetition queue, unlocks and weak stroke types -->
+                <Border Background="#FFFFFFFF" CornerRadius="10" Padding="16,12" Margin="0,12,0,0"
+                        BorderBrush="#22000000" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Text="Today" FontSize="13" Foreground="#FF777777"/>
+                        <TextBlock x:Name="TodayLabel" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Margin="0,2,0,0"/>
+                        <TextBlock x:Name="UnlockLabel" FontSize="15" TextWrapping="Wrap" Foreground="#FF2E7D32"
+                                   Margin="0,4,0,0"/>
+                        <TextBlock x:Name="WeakLabel" FontSize="13" TextWrapping="Wrap" Foreground="#FF555555"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
+            </ScrollViewer>
 
             <TextBlock x:Name="StatusLabel"
                        DockPanel.Dock="Bottom"
