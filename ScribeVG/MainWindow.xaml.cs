@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         DrawBackgroundGrid();
         TryLoadBundledSamples();
         StatusLabel.Text =
-            "Trace the red stroke, starting at the dot. Each stroke gets a score from 0 to 100.";
+            "Write the kanji from memory. Press Space (or tick the box) to show the stroke guide.";
     }
 
     private void ConfigureInk()
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
         }
 
         ShowCurrentCard();
-        StatusLabel.Text = $"Loaded {_deck.Count} character(s). Trace the highlighted stroke.";
+        StatusLabel.Text = $"Loaded {_deck.Count} character(s). Press Space to show or hide the stroke guide.";
     }
 
     private void Previous_Click(object sender, RoutedEventArgs e) => MoveCard(-1);
@@ -192,6 +192,16 @@ public partial class MainWindow : Window
         ResetScores();
         ShowCurrentCard(keepStatus: true);
         StatusLabel.Text = "Canvas cleared.";
+    }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Space toggles the stroke guide. Handled here so a focused button doesn't also "click".
+        if (e.Key == Key.Space)
+        {
+            ShowGuideCheck.IsChecked = ShowGuideCheck.IsChecked != true;
+            e.Handled = true;
+        }
     }
 
     private void ShowGuideCheck_Changed(object sender, RoutedEventArgs e)
@@ -337,7 +347,9 @@ public partial class MainWindow : Window
         GradeLabel.Text = string.Empty;
         ScoreBar.Value = 0;
         BreakdownLabel.Text = string.Empty;
-        TipLabel.Text = "Trace the red stroke, starting at the dot.";
+        TipLabel.Text = ShowGuideCheck.IsChecked == true
+            ? "Trace the red stroke, starting at the dot."
+            : "Write from memory, or press Space for the guide.";
         UpdateKanjiTally();
     }
 

@@ -7,7 +7,8 @@
         MinHeight="640"
         MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF3F0EA">
+        Background="#FFF3F0EA"
+        PreviewKeyDown="Window_PreviewKeyDown">
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -88,8 +89,8 @@
                         Click="OpenFile_Click"/>
 
                 <CheckBox x:Name="ShowGuideCheck"
-                          Content="Show stroke-order guide"
-                          IsChecked="True"
+                          Content="Show stroke guide (Space)"
+                          IsChecked="False"
                           FontSize="16"
                           Margin="0,0,0,16"
                           Checked="ShowGuideCheck_Changed"
