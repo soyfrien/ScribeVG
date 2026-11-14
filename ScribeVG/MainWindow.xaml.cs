@@ -216,6 +216,14 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // ` / ~ key (Oem3 on US layouts): undo the last stroke, same as the Undo button.
+        if (e.Key == Key.Oem3)
+        {
+            e.Handled = true;
+            if (!e.IsRepeat) Undo_Click(sender, new RoutedEventArgs());
+            return;
+        }
+
         if (e.Key != Key.Space) return;
         e.Handled = true; // so a focused button doesn't also "click"
         if (e.IsRepeat || _spaceDownAt is not null) return;

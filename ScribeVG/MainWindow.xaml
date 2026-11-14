@@ -111,7 +111,7 @@
                           Unchecked="ShowGuideCheck_Changed"/>
 
                 <UniformGrid Columns="2" Margin="0,0,0,8">
-                    <Button Content="Undo"
+                    <Button Content="Undo (~)" ToolTip="Undo last stroke (` or ~ key)"
                             Height="44"
                             FontSize="16"
                             Margin="0,0,6,8"
