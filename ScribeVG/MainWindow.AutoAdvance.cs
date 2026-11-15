@@ -14,7 +14,7 @@ public partial class MainWindow
     private void InitAutoAdvance()
     {
         foreach (var choice in AutoAdvanceChoices) AutoAdvanceCombo.Items.Add(choice);
-        var score = AutoAdvanceChoices.Contains(_settings.AutoAdvanceScore) ? _settings.AutoAdvanceScore : 80;
+        var score = AutoAdvanceChoices.Contains(_settings.AutoAdvanceScore) ? _settings.AutoAdvanceScore : 75;
         AutoAdvanceCombo.SelectedItem = score;
         AutoAdvanceCheck.IsChecked = _settings.AutoAdvance;
         _autoAdvanceReady = true;
@@ -40,16 +40,26 @@ public partial class MainWindow
 
         var cardIndex = _cardIndex;
         StatusLabel.Text = $"Kanji average {average}. Moving on…";
-        _autoAdvanceTimer = new DispatcherTimer { Interval = AutoAdvanceDelay };
-        _autoAdvanceTimer.Tick += (_, _) =>
+        var timer = new DispatcherTimer { Interval = AutoAdvanceDelay };
+        _autoAdvanceTimer = timer;
+        timer.Tick += (_, _) =>
         {
             CancelAutoAdvance();
             // Only advance if nothing changed meanwhile (no Undo, Clear, or manual Next/Previous).
             if (_deck.Count == 0 || _cardIndex != cardIndex || _cardIndex >= _deck.Count) return;
             if (_currentStrokeIndex < _deck[_cardIndex].Strokes.Count) return;
+
+            // If Emi is reading a sentence, let her finish (clips are short; give up waiting after 10 s).
+            if (_audioPlayingSince is DateTime since && DateTime.UtcNow - since < TimeSpan.FromSeconds(10))
+            {
+                _autoAdvanceTimer = timer;
+                timer.Interval = TimeSpan.FromMilliseconds(250);
+                timer.Start();
+                return;
+            }
             Next_Click(this, new RoutedEventArgs());
         };
-        _autoAdvanceTimer.Start();
+        timer.Start();
     }
 
     private void CancelAutoAdvance()

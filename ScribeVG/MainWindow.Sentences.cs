@@ -18,6 +18,7 @@ public partial class MainWindow
     private readonly AppSettings _settings = AppSettings.Load();
     private AudioLocator? _audio;
     private readonly MediaPlayer _player = new();
+    private DateTime? _audioPlayingSince; // set while one of Emi's clips is playing
     private string? _sentenceKanji;
     private int _sentenceOffset;
 
@@ -39,7 +40,11 @@ public partial class MainWindow
     {
         _audio = new AudioLocator(_settings.AudioFolder);
         _player.MediaFailed += (_, e) =>
+        {
+            _audioPlayingSince = null;
             AudioStatusLabel.Text = $"Couldn't play that clip: {e.ErrorException?.Message}";
+        };
+        _player.MediaEnded += (_, _) => _audioPlayingSince = null;
         Closed += (_, _) => _player.Close();
     }
 
@@ -178,6 +183,7 @@ public partial class MainWindow
             _player.Stop();
             _player.Open(new Uri(path, UriKind.Absolute));
             _player.Play();
+            _audioPlayingSince = DateTime.UtcNow;
         }
         catch (Exception ex)
         {

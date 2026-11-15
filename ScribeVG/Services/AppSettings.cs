@@ -13,7 +13,7 @@ public sealed class AppSettings
     public bool AutoAdvance { get; set; } = true;
 
     /// <summary>Minimum kanji average (0-100) that triggers auto-advance.</summary>
-    public int AutoAdvanceScore { get; set; } = 80;
+    public int AutoAdvanceScore { get; set; } = 75;
 
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
