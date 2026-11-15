@@ -113,6 +113,21 @@
                           Margin="0,0,0,16"
                           Checked="ShowGuideCheck_Changed"
                           Unchecked="ShowGuideCheck_Changed"/>
+                <StackPanel Orientation="Horizontal" Margin="0,-8,0,16">
+                    <CheckBox x:Name="AutoAdvanceCheck"
+                              Content="Auto-advance at"
+                              FontSize="16"
+                              VerticalAlignment="Center"
+                              ToolTip="After you finish a kanji with at least this average score, go to the next card automatically."
+                              Checked="AutoAdvance_Changed"
+                              Unchecked="AutoAdvance_Changed"/>
+                    <ComboBox x:Name="AutoAdvanceCombo"
+                              Width="64"
+                              FontSize="16"
+                              Margin="8,0,6,0"
+                              SelectionChanged="AutoAdvance_Changed"/>
+                    <TextBlock Text="or higher" FontSize="16" VerticalAlignment="Center"/>
+                </StackPanel>
 
                 <UniformGrid Columns="2" Margin="0,0,0,8">
                     <Button Content="Undo (~)" ToolTip="Undo last stroke (` or ~ key)"

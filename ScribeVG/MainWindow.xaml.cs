@@ -55,6 +55,7 @@ public partial class MainWindow : Window
         ConfigureInk();
         DrawBackgroundGrid();
         InitSentences();
+        InitAutoAdvance();
         if (!TryStartStudy())
         {
             TryLoadBundledSamples();
@@ -379,6 +380,7 @@ public partial class MainWindow : Window
 
     private void Next_Click(object sender, RoutedEventArgs e)
     {
+        CancelAutoAdvance();
         if (!_studyMode)
         {
             MoveCard(1);
@@ -531,6 +533,7 @@ public partial class MainWindow : Window
             {
                 StatusLabel.Text = "All strokes done! Press Next for another kanji, or Clear to try again.";
                 FinishStudyCard(card);
+                MaybeAutoAdvance();
             }
         }
         else

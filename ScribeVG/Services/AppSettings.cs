@@ -9,6 +9,12 @@ public sealed class AppSettings
     /// <summary>Folder holding Emi Asano's <c>{id}.m4a</c> clips, if the user picked one.</summary>
     public string? AudioFolder { get; set; }
 
+    /// <summary>Move to the next card automatically after finishing a kanji with a high enough average.</summary>
+    public bool AutoAdvance { get; set; } = true;
+
+    /// <summary>Minimum kanji average (0-100) that triggers auto-advance.</summary>
+    public int AutoAdvanceScore { get; set; } = 80;
+
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public static string DefaultPath => Path.Combine(
