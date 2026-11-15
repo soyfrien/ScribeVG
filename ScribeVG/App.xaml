@@ -3,8 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="CanvasBackground" Color="#FFF7F4EE"/>
-        <SolidColorBrush x:Key="GridLineBrush" Color="#22000000"/>
+        <!-- 漢字練習帳 look: cream paper, green frame, dotted cross guides -->
+        <SolidColorBrush x:Key="CanvasBackground" Color="#FFFFFCF2"/>
+        <SolidColorBrush x:Key="NotebookFrameBrush" Color="#FF3F8F5F"/>
+        <SolidColorBrush x:Key="GridLineBrush" Color="#B03F8F5F"/>
         <SolidColorBrush x:Key="GuideCompletedBrush" Color="#66000000"/>
         <SolidColorBrush x:Key="GuideCurrentBrush" Color="#E0C0392B"/>
         <SolidColorBrush x:Key="GuideUpcomingBrush" Color="#33000000"/>

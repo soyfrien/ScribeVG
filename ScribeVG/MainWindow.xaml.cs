@@ -273,23 +273,21 @@ public partial class MainWindow : Window
         GridCanvas.Children.Clear();
         var brush = (Brush)FindResource("GridLineBrush");
 
-        // Traditional 田 grid: midlines plus a light 3×3.
-        void Line(double x1, double y1, double x2, double y2, double thickness)
+        // Kanji practice notebook (漢字練習帳): a dotted cross through the middle, dividing the square into four.
+        void Line(double x1, double y1, double x2, double y2)
         {
             GridCanvas.Children.Add(new Line
             {
                 X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
                 Stroke = brush,
-                StrokeThickness = thickness
+                StrokeThickness = 4,
+                StrokeDashArray = new DoubleCollection { 0.1, 3.5 }, // round dots, in units of thickness
+                StrokeDashCap = PenLineCap.Round
             });
         }
 
-        Line(DesignSize / 2, 0, DesignSize / 2, DesignSize, 2);
-        Line(0, DesignSize / 2, DesignSize, DesignSize / 2, 2);
-        Line(DesignSize / 3, 0, DesignSize / 3, DesignSize, 1);
-        Line(DesignSize * 2 / 3, 0, DesignSize * 2 / 3, DesignSize, 1);
-        Line(0, DesignSize / 3, DesignSize, DesignSize / 3, 1);
-        Line(0, DesignSize * 2 / 3, DesignSize, DesignSize * 2 / 3, 1);
+        Line(DesignSize / 2, 0, DesignSize / 2, DesignSize);
+        Line(0, DesignSize / 2, DesignSize, DesignSize / 2);
     }
 
     private void TryLoadBundledSamples()

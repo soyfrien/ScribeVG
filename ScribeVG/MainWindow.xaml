@@ -7,7 +7,7 @@
         MinHeight="640"
         MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF3F0EA"
+        Background="#FFE8F0E6"
         PreviewKeyDown="Window_PreviewKeyDown"
         PreviewKeyUp="Window_PreviewKeyUp">
     <Grid Margin="20">
@@ -22,7 +22,7 @@
                 <Grid.RenderTransform>
                     <TranslateTransform x:Name="ShakeTransform"/>
                 </Grid.RenderTransform>
-                <Border BorderBrush="#FF333333" BorderThickness="3">
+                <Border BorderBrush="{StaticResource NotebookFrameBrush}" BorderThickness="12">
                     <Grid>
                         <!-- KanjiVG coordinates are typically 109×109; we draw in 1090×1090 (×10) -->
                         <Canvas x:Name="GridCanvas" IsHitTestVisible="False"/>
