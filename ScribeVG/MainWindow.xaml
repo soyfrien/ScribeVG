@@ -18,7 +18,10 @@
 
         <!-- Square writing surface: guide overlay under an InkCanvas for stylus/touch -->
         <Viewbox Grid.Column="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid Width="1090" Height="1090" Background="{StaticResource CanvasBackground}">
+            <Grid x:Name="WritingSurface" Width="1090" Height="1090" Background="{StaticResource CanvasBackground}">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="ShakeTransform"/>
+                </Grid.RenderTransform>
                 <Border BorderBrush="#FF333333" BorderThickness="3">
                     <Grid>
                         <!-- KanjiVG coordinates are typically 109×109; we draw in 1090×1090 (×10) -->
@@ -30,6 +33,9 @@
                                    MoveEnabled="False"
                                    ResizeEnabled="False"
                                    StrokeCollected="WritingCanvas_StrokeCollected"/>
+                        <!-- Visual "haptics": miss flash and success particles, drawn over the ink -->
+                        <Border x:Name="MissFlash" Background="#FFC62828" Opacity="0" IsHitTestVisible="False"/>
+                        <Canvas x:Name="FxCanvas" IsHitTestVisible="False" ClipToBounds="True"/>
                     </Grid>
                 </Border>
             </Grid>

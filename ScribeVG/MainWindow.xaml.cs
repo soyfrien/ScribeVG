@@ -528,6 +528,8 @@ public partial class MainWindow : Window
         if (result.Passed)
         {
             e.Stroke.DrawingAttributes.Color = ColorFor(result.Score);
+            var end = e.Stroke.StylusPoints[^1];
+            PoofAt(new Point(end.X, end.Y), ColorFor(result.Score), result.Score);
             _strokeScores.Add(result.Score);
             _strokeAttempts.Add(_attemptsOnCurrentStroke);
             _attemptsOnCurrentStroke = 0;
@@ -537,6 +539,7 @@ public partial class MainWindow : Window
             {
                 StatusLabel.Text = "All strokes done! Press Next for another kanji, or Clear to try again.";
                 FinishStudyCard(card);
+                CelebrateKanji((int)Math.Round(_strokeScores.Average()));
                 MaybeAutoAdvance();
             }
         }
@@ -545,6 +548,7 @@ public partial class MainWindow : Window
             // Show the miss in red briefly, then remove it so the canvas only holds accepted strokes.
             var missed = e.Stroke;
             missed.DrawingAttributes.Color = MissColor;
+            ShakeMiss();
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(650) };
             timer.Tick += (_, _) =>
             {
