@@ -134,6 +134,12 @@
                               SelectionChanged="AutoAdvance_Changed"/>
                     <TextBlock Text="or higher" FontSize="16" VerticalAlignment="Center"/>
                 </StackPanel>
+                <CheckBox x:Name="ReduceMotionCheck"
+                          Content="Reduce motion (no shake or bursts)"
+                          FontSize="16"
+                          Margin="0,-8,0,16"
+                          Checked="ReduceMotion_Changed"
+                          Unchecked="ReduceMotion_Changed"/>
 
                 <UniformGrid Columns="2" Margin="0,0,0,8">
                     <Button Content="Undo (~)" ToolTip="Undo last stroke (` or ~ key)"

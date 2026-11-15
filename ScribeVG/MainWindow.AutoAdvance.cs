@@ -17,6 +17,7 @@ public partial class MainWindow
         var score = AutoAdvanceChoices.Contains(_settings.AutoAdvanceScore) ? _settings.AutoAdvanceScore : 75;
         AutoAdvanceCombo.SelectedItem = score;
         AutoAdvanceCheck.IsChecked = _settings.AutoAdvance;
+        ReduceMotionCheck.IsChecked = _settings.ReduceMotion;
         _autoAdvanceReady = true;
     }
 
@@ -26,6 +27,14 @@ public partial class MainWindow
         _settings.AutoAdvance = AutoAdvanceCheck.IsChecked == true;
         if (AutoAdvanceCombo.SelectedItem is int score) _settings.AutoAdvanceScore = score;
         if (!_settings.AutoAdvance) CancelAutoAdvance();
+        try { _settings.Save(); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}"); }
+    }
+
+    private void ReduceMotion_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_autoAdvanceReady) return;
+        _settings.ReduceMotion = ReduceMotionCheck.IsChecked == true;
         try { _settings.Save(); }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}"); }
     }

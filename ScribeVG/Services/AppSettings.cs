@@ -15,6 +15,9 @@ public sealed class AppSettings
     /// <summary>Minimum kanji average (0-100) that triggers auto-advance.</summary>
     public int AutoAdvanceScore { get; set; } = 75;
 
+    /// <summary>Skip the shake and particle bursts; keep only gentle color flashes.</summary>
+    public bool ReduceMotion { get; set; }
+
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public static string DefaultPath => Path.Combine(

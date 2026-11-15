@@ -14,13 +14,10 @@ public partial class MainWindow
     /// <summary>Quick side-to-side shake of the writing box plus a faint red flash.</summary>
     private void ShakeMiss()
     {
-        var shake = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(380) };
-        double[] offsets = { -22, 18, -14, 10, -6, 3, 0 };
-        for (var i = 0; i < offsets.Length; i++)
+        if (!_settings.ReduceMotion)
         {
-            shake.KeyFrames.Add(new EasingDoubleKeyFrame(offsets[i], KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(55 * (i + 1)))));
+            ShakeOnce();
         }
-        ShakeTransform.BeginAnimation(TranslateTransform.XProperty, shake);
 
         var flash = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(420) };
         flash.KeyFrames.Add(new LinearDoubleKeyFrame(0.16, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(60))));
@@ -28,9 +25,21 @@ public partial class MainWindow
         MissFlash.BeginAnimation(OpacityProperty, flash);
     }
 
+    private void ShakeOnce()
+    {
+        var shake = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(380) };
+        double[] offsets = { -22, 18, -14, 10, -6, 3, 0 };
+        for (var i = 0; i < offsets.Length; i++)
+        {
+            shake.KeyFrames.Add(new EasingDoubleKeyFrame(offsets[i], KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(55 * (i + 1)))));
+        }
+        ShakeTransform.BeginAnimation(TranslateTransform.XProperty, shake);
+    }
+
     /// <summary>Small poof where an accepted stroke ended; bigger and livelier for higher scores.</summary>
     private void PoofAt(Point at, Color color, int score)
     {
+        if (_settings.ReduceMotion) return;
         var count = score >= 90 ? 14 : score >= 75 ? 10 : 7;
         var reach = score >= 90 ? 95.0 : 70.0;
         Ring(at, color, 10, reach * 1.1, 420, 6);
@@ -45,6 +54,7 @@ public partial class MainWindow
     /// <summary>Celebration burst from the middle of the box when the whole kanji is finished.</summary>
     private void CelebrateKanji(int average)
     {
+        if (_settings.ReduceMotion) return;
         var center = new Point(FxCanvas.ActualWidth / 2, FxCanvas.ActualHeight / 2);
         if (center.X <= 0) center = new Point(542, 542);
         var color = ColorFor(average);
