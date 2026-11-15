@@ -68,7 +68,11 @@
                            FontSize="84"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Margin="0,8,0,0"/>
+                           Margin="0,8,0,0"
+                           Cursor="Hand"
+                           ToolTip="Tap for an example sentence"
+                           MouseLeftButtonUp="CharacterLabel_Click"
+                           TouchUp="CharacterLabel_Click"/>
                 <!-- Meaning and readings from KANJIDIC2 -->
                 <TextBlock x:Name="MeaningLabel"
                            MouseLeftButtonUp="Meaning_Click"
@@ -271,5 +275,106 @@
                        VerticalAlignment="Bottom"
                        Foreground="#FF333333"/>
         </DockPanel>
+
+        <!-- Speech bubble anchored to the big kanji (opened in code). -->
+        <Popup x:Name="SentenceBubble"
+               Grid.ColumnSpan="2"
+               AllowsTransparency="True"
+               StaysOpen="True"
+               Placement="Custom"
+               Focusable="False">
+            <Grid x:Name="BubbleRoot" RenderTransformOrigin="1,0.16">
+                <Grid.RenderTransform>
+                    <ScaleTransform x:Name="BubbleScale"/>
+                </Grid.RenderTransform>
+                <Grid Margin="8,8,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tail pointing at the kanji, tucked under the body's right edge. -->
+                    <Path Grid.Column="1"
+                          Fill="{StaticResource CanvasBackground}"
+                          Stroke="{StaticResource NotebookFrameBrush}"
+                          StrokeThickness="2.2"
+                          StrokeLineJoin="Round"
+                          Data="M 0,2 L 16,14 L 0,26 Z"
+                          Width="16" Height="28" Stretch="Fill"
+                          VerticalAlignment="Top" Margin="-4,28,2,0"
+                          IsHitTestVisible="False"/>
+
+                    <Border Grid.Column="0"
+                            Background="{StaticResource CanvasBackground}"
+                            BorderBrush="{StaticResource NotebookFrameBrush}"
+                            BorderThickness="2.5"
+                            CornerRadius="16"
+                            Padding="16,14,16,12"
+                            MinWidth="240" MaxWidth="380"
+                            SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.28"
+                                              Direction="240" Color="#FF000000"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock x:Name="BubbleEmptyLabel"
+                                       FontSize="15" Foreground="#FF555555"
+                                       TextWrapping="Wrap" Visibility="Collapsed"/>
+                            <StackPanel x:Name="BubbleBody">
+                                <TextBlock x:Name="BubbleJapanese"
+                                           FontSize="22" TextWrapping="Wrap"
+                                           MouseLeftButtonUp="BubbleJapanese_Click"
+                                           TouchUp="BubbleJapanese_Click"/>
+                                <TextBlock x:Name="BubblePlaceholder"
+                                           Text="Reading hidden — tap to show"
+                                           FontSize="13" FontStyle="Italic"
+                                           Foreground="#FF999999"
+                                           Margin="0,6,0,0"
+                                           Cursor="Hand"
+                                           Visibility="Collapsed"
+                                           MouseLeftButtonUp="BubblePlaceholder_Click"
+                                           TouchUp="BubblePlaceholder_Click"/>
+                                <TextBlock x:Name="BubbleReading"
+                                           FontSize="13" Foreground="#FF666666"
+                                           TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Visibility="Collapsed"/>
+                                <TextBlock x:Name="BubbleEnglish"
+                                           FontSize="14" FontStyle="Italic"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"
+                                           Visibility="Collapsed"/>
+                                <DockPanel Margin="0,10,0,0" LastChildFill="False">
+                                    <Button x:Name="BubbleReplayButton"
+                                            Content="🔊" Width="36" Height="32"
+                                            FontSize="14" Padding="0"
+                                            Focusable="False"
+                                            DockPanel.Dock="Left"
+                                            Background="#FFF7F3E6"
+                                            BorderBrush="{StaticResource NotebookFrameBrush}"
+                                            ToolTip="Play Emi's reading"
+                                            Click="BubbleReplay_Click"/>
+                                    <Button x:Name="BubbleNextButton"
+                                            Content="▶" Width="36" Height="32"
+                                            FontSize="13" Padding="0"
+                                            Focusable="False"
+                                            DockPanel.Dock="Right"
+                                            Background="#FFF7F3E6"
+                                            BorderBrush="{StaticResource NotebookFrameBrush}"
+                                            ToolTip="Next sentence"
+                                            Click="BubbleNext_Click"/>
+                                    <TextBlock x:Name="BubbleIndexLabel"
+                                               FontSize="13" Foreground="#FF3F8F5F"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0"
+                                               DockPanel.Dock="Left"/>
+                                </DockPanel>
+                                <TextBlock x:Name="BubbleHint"
+                                           FontSize="12" Foreground="#FF9A9A9A"
+                                           Margin="0,6,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Popup>
     </Grid>
 </Window>

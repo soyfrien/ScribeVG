@@ -178,18 +178,41 @@ public partial class MainWindow
 
     private void Play_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: string path } || !File.Exists(path)) return;
+        if (sender is not Button { Tag: string path }) return;
+        PlayClip(path, announceErrors: true);
+    }
+
+    /// <summary>Stop any clip that's playing, then play this sentence's recording if it exists.</summary>
+    private void PlaySentenceAudio(ExampleSentence sentence)
+    {
+        PlayClip(_audio?.Find(sentence.Id), announceErrors: false);
+    }
+
+    private void PlayClip(string? path, bool announceErrors)
+    {
+        StopSentenceAudio();
+        if (path is null || !File.Exists(path)) return;
         try
         {
-            _player.Stop();
             _player.Open(new Uri(path, UriKind.Absolute));
             _player.Play();
             _audioPlayingSince = DateTime.UtcNow;
         }
         catch (Exception ex)
         {
-            AudioStatusLabel.Text = $"Couldn't play {System.IO.Path.GetFileName(path)}: {ex.Message}";
+            _audioPlayingSince = null;
+            if (announceErrors)
+            {
+                AudioStatusLabel.Text = $"Couldn't play {System.IO.Path.GetFileName(path)}: {ex.Message}";
+            }
         }
+    }
+
+    private void StopSentenceAudio()
+    {
+        try { _player.Stop(); }
+        catch (Exception) { /* nothing was open */ }
+        _audioPlayingSince = null;
     }
 
     private void MoreSentences_Click(object sender, RoutedEventArgs e)

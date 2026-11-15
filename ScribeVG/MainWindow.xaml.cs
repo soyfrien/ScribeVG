@@ -56,6 +56,7 @@ public partial class MainWindow : Window
         ConfigureInk();
         DrawBackgroundGrid();
         InitSentences();
+        InitBubble();
         InitAutoAdvance();
         InitSheet();
         InitMeanings();
@@ -477,6 +478,13 @@ public partial class MainWindow : Window
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         // ` / ~ key (Oem3 on US layouts): undo the last stroke, same as the Undo button.
+        if (e.Key == Key.Escape && SentenceBubble.IsOpen)
+        {
+            CloseSentenceBubble(stopAudio: false);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Oem3)
         {
             e.Handled = true;
@@ -641,6 +649,7 @@ public partial class MainWindow : Window
 
     private void ShowDefinition(string? character)
     {
+        DismissBubbleIfKanjiChanged(character);
         ShowSentences(character);
         var info = _dictionary?.Lookup(character);
         if (info is null)

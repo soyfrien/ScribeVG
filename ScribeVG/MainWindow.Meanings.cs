@@ -77,6 +77,7 @@ public partial class MainWindow
         {
             secret.Visibility = shown ? Visibility.Visible : Visibility.Collapsed;
         }
+        ApplyBubbleSecrets();
         if (_sheetReady && _settings.SheetMode)
         {
             UpdateSheetReading(_deck.Count > 0 && _cardIndex < _deck.Count ? _deck[_cardIndex].Character : null);

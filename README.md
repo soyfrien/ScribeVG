@@ -10,6 +10,7 @@ A Windows touchscreen app for practicing kanji handwriting. Write each stroke an
 - Sheet mode, like a practice notebook: one traced rep, two faded reps, then three from memory
 - Meanings stay hidden until you finish, so you have to recall them
 - Example sentences for about 1,900 kanji
+- Tap the big kanji for a speech bubble with an example sentence, and Emi's voice when a clip is available
 - Auto-advance, visual feedback and a practice-paper look
 
 ## Download
