@@ -68,6 +68,21 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Smaller ring and poof from the middle when one rep of a sheet is finished.</summary>
+    private void RepPoof(int average)
+    {
+        if (_settings.ReduceMotion) return;
+        var center = new Point(FxCanvas.ActualWidth / 2, FxCanvas.ActualHeight / 2);
+        if (center.X <= 0) center = new Point(542, 542);
+        var color = ColorFor(average);
+        Ring(center, color, 30, 300, 500, 10);
+        for (var i = 0; i < 14; i++)
+        {
+            var angle = 2 * Math.PI * i / 14 + FxRandom.NextDouble() * 0.3;
+            Particle(center, color, 10 + FxRandom.NextDouble() * 10, angle, 150 + FxRandom.NextDouble() * 120, 500 + FxRandom.Next(150));
+        }
+    }
+
     private void Particle(Point from, Color color, double size, double angle, double distance, int ms)
     {
         var dot = new Ellipse { Width = size, Height = size, Fill = new SolidColorBrush(color), Opacity = 0.9 };

@@ -18,6 +18,12 @@ public sealed class AppSettings
     /// <summary>Skip the shake and particle bursts; keep only gentle color flashes.</summary>
     public bool ReduceMotion { get; set; }
 
+    /// <summary>Write each kanji 6 times like a practice-notebook row: model, fading model, then from memory.</summary>
+    public bool SheetMode { get; set; } = true;
+
+    /// <summary>Hide meanings, readings and sentence translations while writing so they have to be recalled.</summary>
+    public bool HideMeanings { get; set; } = true;
+
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public static string DefaultPath => Path.Combine(

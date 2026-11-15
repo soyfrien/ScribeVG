@@ -55,6 +55,7 @@ public partial class MainWindow
         if (kanji != _sentenceKanji) _sentenceOffset = 0;
         _sentenceKanji = kanji;
         SentencePanel.Children.Clear();
+        _sentenceSecrets.Clear();
 
         var all = _sentences?.For(kanji) ?? [];
         MoreSentencesButton.Visibility = all.Count > SentencesShown ? Visibility.Visible : Visibility.Collapsed;
@@ -124,19 +125,19 @@ public partial class MainWindow
         text.Children.Add(japanese);
         if (!string.IsNullOrEmpty(sentence.Reading))
         {
-            text.Children.Add(new TextBlock
+            text.Children.Add(Secret(new TextBlock
             {
                 Text = sentence.Reading, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66)),
                 TextWrapping = TextWrapping.Wrap
-            });
+            }));
         }
         if (!string.IsNullOrEmpty(sentence.English))
         {
-            text.Children.Add(new TextBlock
+            text.Children.Add(Secret(new TextBlock
             {
                 Text = sentence.English, FontSize = 14, FontStyle = FontStyles.Italic,
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0)
-            });
+            }));
         }
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);

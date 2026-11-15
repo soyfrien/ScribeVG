@@ -48,10 +48,17 @@ public partial class MainWindow
         var redo = _guideUsedThisPass; // traced with the stencil: write it again from memory instead of moving on
         if (!redo && average < _settings.AutoAdvanceScore) return;
 
-        var cardIndex = _cardIndex;
-        StatusLabel.Text = redo
+        ScheduleAutoAdvance(redo
             ? $"Kanji average {average} with the guide. Now try it without…"
-            : $"Kanji average {average}. Moving on…";
+            : $"Kanji average {average}. Moving on…", redo);
+    }
+
+    /// <summary>Show the status, wait a moment (and for Emi to finish), then go to the next card or redo without the guide.</summary>
+    private void ScheduleAutoAdvance(string status, bool redo)
+    {
+        CancelAutoAdvance();
+        var cardIndex = _cardIndex;
+        StatusLabel.Text = status;
         var timer = new DispatcherTimer { Interval = AutoAdvanceDelay };
         _autoAdvanceTimer = timer;
         timer.Tick += (_, _) =>
@@ -60,6 +67,7 @@ public partial class MainWindow
             // Only advance if nothing changed meanwhile (no Undo, Clear, or manual Next/Previous).
             if (_deck.Count == 0 || _cardIndex != cardIndex || _cardIndex >= _deck.Count) return;
             if (_currentStrokeIndex < _deck[_cardIndex].Strokes.Count) return;
+            if (_sheet is { IsComplete: false }) return; // sheet restarted meanwhile
 
             // If Emi is reading a sentence, let her finish (clips are short; give up waiting after 10 s).
             if (_audioPlayingSince is DateTime since && DateTime.UtcNow - since < TimeSpan.FromSeconds(10))

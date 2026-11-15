@@ -57,6 +57,8 @@ public partial class MainWindow : Window
         DrawBackgroundGrid();
         InitSentences();
         InitAutoAdvance();
+        InitSheet();
+        InitMeanings();
         if (!TryStartStudy())
         {
             TryLoadBundledSamples();
@@ -184,6 +186,9 @@ public partial class MainWindow : Window
         _anyReversed = false;
         _rated = false;
         _failsByStroke.Clear();
+        _meaningRevealed = false;
+        StartSheet();
+        UpdateSheetStrip();
     }
 
     private void SaveProgress()
@@ -192,26 +197,30 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusLabel.Text = $"Couldn't save progress: {ex.Message}"; }
     }
 
-    private void FinishStudyCard(KanjiCard card)
+    /// <summary>Rate the card (study mode, once). Sheet mode passes its memory reps; otherwise the current pass is used.</summary>
+    private string? FinishStudyCard(KanjiCard card, KanjiAttempt? attempt = null)
     {
-        if (_planner is null || _rated || !WillRate(card.Character)) return;
+        if (_planner is null || _rated || !WillRate(card.Character)) return null;
         _rated = true;
 
-        var tries = Enumerable.Range(0, card.Strokes.Count)
-            .Select(i => 1 + _failsByStroke.GetValueOrDefault(i))
-            .ToList();
-        var attempt = new KanjiAttempt(_strokeScores.ToList(), tries, _guideUsed, _anyReversed);
+        attempt ??= new KanjiAttempt(
+            _strokeScores.ToList(),
+            Enumerable.Range(0, card.Strokes.Count).Select(i => 1 + _failsByStroke.GetValueOrDefault(i)).ToList(),
+            _guideUsed,
+            _anyReversed);
+        var tries = attempt.TriesPerStroke;
         var rating = PracticeRating.Rate(attempt);
         var outcome = _planner.Record(card.Character!, rating, DateTimeOffset.Now);
         SaveProgress();
 
         var reasons = new List<string>();
-        if (_guideUsed) reasons.Add("used the guide");
-        if (_anyReversed) reasons.Add("a stroke went backwards");
+        if (attempt.GuideUsed) reasons.Add("used the guide");
+        if (attempt.AnyReversed) reasons.Add("a stroke went backwards");
         if (tries.Any(t => t >= 3)) reasons.Add("a stroke took 3+ tries");
         var why = reasons.Count > 0 ? $" ({string.Join(", ", reasons)})" : string.Empty;
         var when = outcome.Card.Due is DateTimeOffset due ? DescribeWait(due - DateTimeOffset.Now) : "later";
-        StatusLabel.Text = $"{PracticeRating.Describe(rating)}{why}. Next review {when}. Press Next for the next kanji.";
+        var ratingText = $"{PracticeRating.Describe(rating)}{why}. Next review {when}.";
+        StatusLabel.Text = $"{ratingText} Press Next for the next kanji.";
 
         if (outcome.Unlocked.Count > 0)
         {
@@ -222,6 +231,7 @@ public partial class MainWindow : Window
         }
 
         UpdateTodayPanel();
+        return ratingText;
     }
 
     private static string DescribeWait(TimeSpan wait)
@@ -405,6 +415,12 @@ public partial class MainWindow : Window
 
     private void Undo_Click(object sender, RoutedEventArgs e)
     {
+        FlushRepTransition();
+        if (_sheet is { IsComplete: true })
+        {
+            StatusLabel.Text = "The sheet is done. Press Clear to write it again, or Next for another kanji.";
+            return;
+        }
         if (WritingCanvas.Strokes.Count == 0) return;
         WritingCanvas.Strokes.RemoveAt(WritingCanvas.Strokes.Count - 1);
         if (_currentStrokeIndex > 0)
@@ -427,12 +443,16 @@ public partial class MainWindow : Window
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
         CancelAutoAdvance();
+        FlushRepTransition();
+        var newSheet = _sheet is { IsComplete: true };
+        if (newSheet) StartSheet(); // a finished sheet starts over from rep 1
+        else _sheet?.ClearCurrentRep();
         WritingCanvas.Strokes.Clear();
         _currentStrokeIndex = 0;
         _guideUsedThisPass = false;
         ResetScores();
         ShowCurrentCard(keepStatus: true);
-        StatusLabel.Text = "Canvas cleared.";
+        StatusLabel.Text = newSheet ? "New sheet: rep 1 of 6." : _sheet is null ? "Canvas cleared." : $"Rep {_sheet.CurrentRep} cleared.";
     }
 
     private void Peek_Down(object sender, RoutedEventArgs e)
@@ -509,6 +529,14 @@ public partial class MainWindow : Window
         var card = _deck[_cardIndex];
         if (_currentStrokeIndex >= card.Strokes.Count)
         {
+            if (_sheet is not null)
+            {
+                WritingCanvas.Strokes.Remove(e.Stroke);
+                StatusLabel.Text = _sheet.IsComplete
+                    ? "The sheet is done. Press Next for another kanji, or Clear to write the sheet again."
+                    : "One moment, the next box is coming…";
+                return;
+            }
             StatusLabel.Text = "This character is complete. Press Next for another one.";
             return;
         }
@@ -517,7 +545,11 @@ public partial class MainWindow : Window
         var canonical = card.Strokes[_currentStrokeIndex];
         var result = _matcher.Compare(canonical, user);
         _attemptsOnCurrentStroke++;
-        if (result.Reversed) _anyReversed = true;
+        if (result.Reversed)
+        {
+            _anyReversed = true;
+            _sheet?.MarkReversed();
+        }
         if (!result.Passed) _failsByStroke[_currentStrokeIndex] = _failsByStroke.GetValueOrDefault(_currentStrokeIndex) + 1;
         _planner?.RecordStroke(canonical.StrokeType, result.Score);
 
@@ -533,9 +565,14 @@ public partial class MainWindow : Window
             _attemptsOnCurrentStroke = 0;
             _currentStrokeIndex++;
             StatusLabel.Text = result.Summary;
-            if (_currentStrokeIndex >= card.Strokes.Count)
+            if (_currentStrokeIndex >= card.Strokes.Count && _sheet is not null)
+            {
+                FinishSheetRep(card);
+            }
+            else if (_currentStrokeIndex >= card.Strokes.Count)
             {
                 StatusLabel.Text = "All strokes done! Press Next for another kanji, or Clear to try again.";
+                _meaningRevealed = true;
                 FinishStudyCard(card);
                 CelebrateKanji((int)Math.Round(_strokeScores.Average()));
                 MaybeAutoAdvance();
@@ -573,7 +610,7 @@ public partial class MainWindow : Window
         var current = Math.Min(_currentStrokeIndex + 1, Math.Max(total, 1));
         StrokeProgressLabel.Text = total == 0
             ? "No strokes in this file"
-            : $"Stroke {Math.Min(current, total)} of {total}" +
+            : SheetProgressPrefix() + $"Stroke {Math.Min(current, total)} of {total}" +
               (_currentStrokeIndex >= total ? " — complete" : string.Empty);
 
         if (!keepStatus)
@@ -584,6 +621,7 @@ public partial class MainWindow : Window
         }
 
         RedrawGuide();
+        UpdateSheetStrip();
     }
 
     private static KanjiDictionary? LoadDictionary()
@@ -607,19 +645,21 @@ public partial class MainWindow : Window
         var info = _dictionary?.Lookup(character);
         if (info is null)
         {
-            MeaningLabel.Text = _dictionary is null ? "(dictionary not found)" : string.Empty;
-            ReadingsLabel.Text = string.Empty;
+            _meaningText = _dictionary is null ? "(dictionary not found)" : string.Empty;
+            _readingsText = string.Empty;
+            _meaningTip = null;
+            ApplyMeaningVisibility();
             KanjiMetaLabel.Text = string.Empty;
             RadicalLabel.Text = string.Empty;
             return;
         }
 
-        MeaningLabel.Text = string.Join(", ", info.Meanings.Take(4));
+        _meaningText = string.Join(", ", info.Meanings.Take(4));
 
         var readings = new List<string>();
         if (info.OnReadings.Count > 0) readings.Add("On: " + string.Join("、", info.OnReadings));
         if (info.KunReadings.Count > 0) readings.Add("Kun: " + string.Join("、", info.KunDisplay));
-        ReadingsLabel.Text = string.Join("\n", readings);
+        _readingsText = string.Join("\n", readings);
 
         var meta = new List<string>();
         if (info.StrokeCount is int strokes) meta.Add($"{strokes} stroke{(strokes == 1 ? "" : "s")}");
@@ -632,7 +672,8 @@ public partial class MainWindow : Window
             ? string.Empty
             : $"Radical {info.RadicalNumber}: {radical.Character} ({radical.Name})";
 
-        MeaningLabel.ToolTip = info.Meanings.Count > 4 ? string.Join(", ", info.Meanings) : null;
+        _meaningTip = info.Meanings.Count > 4 ? string.Join(", ", info.Meanings) : null;
+        ApplyMeaningVisibility();
     }
 
     private void ResetScores()
@@ -645,9 +686,9 @@ public partial class MainWindow : Window
         GradeLabel.Text = string.Empty;
         ScoreBar.Value = 0;
         BreakdownLabel.Text = string.Empty;
-        TipLabel.Text = ShowGuideCheck.IsChecked == true
+        TipLabel.Text = SheetTip() ?? (ShowGuideCheck.IsChecked == true
             ? "Trace the red stroke, starting at the dot."
-            : "Write from memory, or press Space for the guide.";
+            : "Write from memory, or press Space for the guide.");
         UpdateKanjiTally();
     }
 
@@ -721,36 +762,54 @@ public partial class MainWindow : Window
     private void RedrawGuide()
     {
         GuideCanvas.Children.Clear();
-        if (_deck.Count == 0 || (ShowGuideCheck.IsChecked != true && !_peeking))
+        ApplyMeaningVisibility();
+        if (_deck.Count == 0) return;
+
+        var card = _deck[_cardIndex];
+        var userGuide = ShowGuideCheck.IsChecked == true || _peeking;
+        var completed = (Brush)FindResource("GuideCompletedBrush");
+        var current = (Brush)FindResource("GuideCurrentBrush");
+        var upcoming = (Brush)FindResource("GuideUpcomingBrush");
+
+        if (_sheet is { IsComplete: false } sheet)
         {
+            if (!userGuide)
+            {
+                // The sheet's own model: solid with stroke order on rep 1, fading on reps 2–3, none from memory.
+                if (sheet.CurrentRep == 1) DrawGuideStrokes(card, upcoming, current, SheetModelBrush, startDot: true);
+                else if (sheet.CurrentModelOpacity > 0) DrawModel(GuideCanvas, card, sheet.CurrentModelOpacity);
+                return;
+            }
+            if (_currentStrokeIndex < card.Strokes.Count) sheet.MarkGuideUsed(); // counts against memory reps
+            DrawGuideStrokes(card, completed, current, upcoming, startDot: true);
             return;
         }
 
-        var card = _deck[_cardIndex];
+        if (!userGuide) return;
         if (_currentStrokeIndex < card.Strokes.Count)
         {
             _guideUsed = true; // the guide was on screen while this kanji was being written
             _guideUsedThisPass = true;
         }
+        DrawGuideStrokes(card, completed, current, upcoming, startDot: true);
+    }
 
-        var completed = (Brush)FindResource("GuideCompletedBrush");
-        var current = (Brush)FindResource("GuideCurrentBrush");
-        var upcoming = (Brush)FindResource("GuideUpcomingBrush");
+    private static PathGeometry StrokeGeometry(CanonicalStroke stroke)
+    {
+        var figure = new PathFigure { StartPoint = ToDesign(stroke.Points[0]), IsClosed = false };
+        for (int p = 1; p < stroke.Points.Count; p++)
+        {
+            figure.Segments.Add(new LineSegment(ToDesign(stroke.Points[p]), true));
+        }
+        return new PathGeometry(new[] { figure });
+    }
 
+    private void DrawGuideStrokes(KanjiCard card, Brush completed, Brush current, Brush upcoming, bool startDot)
+    {
         for (int i = 0; i < card.Strokes.Count; i++)
         {
             var stroke = card.Strokes[i];
             if (stroke.Points.Count < 2) continue;
-
-            var figure = new PathFigure
-            {
-                StartPoint = ToDesign(stroke.Points[0]),
-                IsClosed = false
-            };
-            for (int p = 1; p < stroke.Points.Count; p++)
-            {
-                figure.Segments.Add(new LineSegment(ToDesign(stroke.Points[p]), true));
-            }
 
             Brush brush;
             double thickness;
@@ -772,7 +831,7 @@ public partial class MainWindow : Window
 
             GuideCanvas.Children.Add(new System.Windows.Shapes.Path
             {
-                Data = new PathGeometry(new[] { figure }),
+                Data = StrokeGeometry(stroke),
                 Stroke = brush,
                 StrokeThickness = thickness,
                 StrokeStartLineCap = PenLineCap.Round,
@@ -781,7 +840,7 @@ public partial class MainWindow : Window
                 Fill = Brushes.Transparent
             });
 
-            if (i == _currentStrokeIndex)
+            if (startDot && i == _currentStrokeIndex)
             {
                 // Start dot so it's clear where (and which way) to begin.
                 const double dot = 26;

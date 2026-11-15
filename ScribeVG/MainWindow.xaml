@@ -18,6 +18,7 @@
 
         <!-- Square writing surface: guide overlay under an InkCanvas for stylus/touch -->
         <Viewbox Grid.Column="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <StackPanel>
             <Grid x:Name="WritingSurface" Width="1090" Height="1090" Background="{StaticResource CanvasBackground}">
                 <Grid.RenderTransform>
                     <TranslateTransform x:Name="ShakeTransform"/>
@@ -39,6 +40,24 @@
                     </Grid>
                 </Border>
             </Grid>
+
+            <!-- Sheet mode: a notebook row of 6 small boxes (one per rep) with a thin reading column -->
+            <Grid x:Name="SheetStrip" Width="1090" Height="168" Margin="0,24,0,0" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Margin="0,6,10,6" Background="{StaticResource CanvasBackground}"
+                        BorderBrush="{StaticResource NotebookFrameBrush}" BorderThickness="3"
+                        ToolTip="Reading">
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="4">
+                        <TextBlock x:Name="SheetReadingLabel" FontSize="30" TextAlignment="Center"
+                                   Foreground="#FF2F6F47" LineHeight="34" LineStackingStrategy="BlockLineHeight"/>
+                    </Viewbox>
+                </Border>
+                <UniformGrid x:Name="SheetBoxes" Grid.Column="1" Rows="1" Columns="6"/>
+            </Grid>
+          </StackPanel>
         </Viewbox>
 
         <DockPanel Grid.Column="1" Margin="20,0,0,0">
@@ -52,6 +71,8 @@
                            Margin="0,8,0,0"/>
                 <!-- Meaning and readings from KANJIDIC2 -->
                 <TextBlock x:Name="MeaningLabel"
+                           MouseLeftButtonUp="Meaning_Click"
+                           TouchUp="Meaning_Click"
                            FontSize="22"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
@@ -140,6 +161,20 @@
                           Margin="0,-8,0,16"
                           Checked="ReduceMotion_Changed"
                           Unchecked="ReduceMotion_Changed"/>
+                <CheckBox x:Name="SheetModeCheck"
+                          Content="Sheet mode (write each kanji 6 times)"
+                          FontSize="16"
+                          Margin="0,-8,0,16"
+                          ToolTip="Like a practice notebook row: trace the model, then a fading model, then write it 3 times from memory. Only the memory reps count toward the review."
+                          Checked="SheetMode_Changed"
+                          Unchecked="SheetMode_Changed"/>
+                <CheckBox x:Name="HideMeaningsCheck"
+                          Content="Hide meanings until done"
+                          FontSize="16"
+                          Margin="0,-8,0,16"
+                          ToolTip="Keep the meaning, readings and sentence translations hidden while you write. They show while the guide is on or Space is held, when you finish, or when you tap the hidden meaning."
+                          Checked="HideMeanings_Changed"
+                          Unchecked="HideMeanings_Changed"/>
 
                 <UniformGrid Columns="2" Margin="0,0,0,8">
                     <Button Content="Undo (~)" ToolTip="Undo last stroke (` or ~ key)"
