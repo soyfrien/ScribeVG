@@ -41,6 +41,7 @@ public partial class MainWindow : Window
 
     // What happened on the current card since it was shown (survives Undo/Clear) for the auto-rating.
     private bool _guideUsed;
+    private bool _guideUsedThisPass; // guide shown since the canvas was last cleared
     private bool _anyReversed;
     private bool _rated;
     private readonly Dictionary<int, int> _failsByStroke = [];
@@ -179,6 +180,7 @@ public partial class MainWindow : Window
     private void ResetCardTracking()
     {
         _guideUsed = false;
+        _guideUsedThisPass = false;
         _anyReversed = false;
         _rated = false;
         _failsByStroke.Clear();
@@ -426,8 +428,10 @@ public partial class MainWindow : Window
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
+        CancelAutoAdvance();
         WritingCanvas.Strokes.Clear();
         _currentStrokeIndex = 0;
+        _guideUsedThisPass = false;
         ResetScores();
         ShowCurrentCard(keepStatus: true);
         StatusLabel.Text = "Canvas cleared.";
@@ -724,6 +728,7 @@ public partial class MainWindow : Window
         if (_currentStrokeIndex < card.Strokes.Count)
         {
             _guideUsed = true; // the guide was on screen while this kanji was being written
+            _guideUsedThisPass = true;
         }
 
         var completed = (Brush)FindResource("GuideCompletedBrush");

@@ -36,10 +36,13 @@ public partial class MainWindow
         if (!_settings.AutoAdvance || _strokeScores.Count == 0) return;
 
         var average = (int)Math.Round(_strokeScores.Average());
-        if (average < _settings.AutoAdvanceScore) return;
+        var redo = _guideUsedThisPass; // traced with the stencil: write it again from memory instead of moving on
+        if (!redo && average < _settings.AutoAdvanceScore) return;
 
         var cardIndex = _cardIndex;
-        StatusLabel.Text = $"Kanji average {average}. Moving on…";
+        StatusLabel.Text = redo
+            ? $"Kanji average {average} with the guide. Now try it without…"
+            : $"Kanji average {average}. Moving on…";
         var timer = new DispatcherTimer { Interval = AutoAdvanceDelay };
         _autoAdvanceTimer = timer;
         timer.Tick += (_, _) =>
@@ -55,6 +58,13 @@ public partial class MainWindow
                 _autoAdvanceTimer = timer;
                 timer.Interval = TimeSpan.FromMilliseconds(250);
                 timer.Start();
+                return;
+            }
+            if (redo)
+            {
+                ShowGuideCheck.IsChecked = false; // redraws via Changed
+                Clear_Click(this, new RoutedEventArgs());
+                StatusLabel.Text = "Now write it without the guide.";
                 return;
             }
             Next_Click(this, new RoutedEventArgs());
