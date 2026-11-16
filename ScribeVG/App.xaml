@@ -11,5 +11,9 @@
         <SolidColorBrush x:Key="GuideCurrentBrush" Color="#E0C0392B"/>
         <SolidColorBrush x:Key="GuideUpcomingBrush" Color="#33000000"/>
         <SolidColorBrush x:Key="InkBrush" Color="#FF1A1A1A"/>
+        <!-- Multi-size ICO; pack URI keeps all frames so WPF can pick the right size. -->
+        <Style TargetType="{x:Type Window}">
+            <Setter Property="Icon" Value="pack://application:,,,/Assets/ScribeVG.ico"/>
+        </Style>
     </Application.Resources>
 </Application>

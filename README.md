@@ -1,5 +1,7 @@
 # ScribeVG
 
+<img src="ScribeVG/Assets/ScribeVG.svg" width="96" height="96" alt="ScribeVG icon">
+
 A Windows touchscreen app for practicing kanji handwriting. Write each stroke and ScribeVG checks its order, direction and shape against [KanjiVG](https://kanjivg.tagaini.net) stroke data, then schedules reviews with spaced repetition.
 
 ## Features

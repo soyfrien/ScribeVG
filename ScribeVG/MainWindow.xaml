@@ -7,6 +7,7 @@
         MinHeight="640"
         MinWidth="1100"
         WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Assets/ScribeVG.ico"
         Background="#FFE8F0E6"
         PreviewKeyDown="Window_PreviewKeyDown"
         PreviewKeyUp="Window_PreviewKeyUp">

@@ -9,8 +9,13 @@
     <!-- Lets the project also build (not run) on Linux/macOS, e.g. for CI on cosmic2. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationTitle>ScribeVG</ApplicationTitle>
+    <ApplicationIcon>Assets\ScribeVG.ico</ApplicationIcon>
     <RootNamespace>ScribeVG</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\ScribeVG.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Data\**\*.svg" CopyToOutputDirectory="PreserveNewest" />
