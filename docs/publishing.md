@@ -26,6 +26,7 @@ lists a higher version.
    | Date | Version |
    |------|---------|
    | 2026-11-21 | 0.2.0.1 |
+   | 2026-11-21 | 0.2.0.2 |
 2. **Build on a Windows PC with Visual Studio** (ClickOnce can't be built with
    `dotnet publish` or on Linux). From a clean copy of the source (`git archive HEAD`):
 
