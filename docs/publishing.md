@@ -13,6 +13,10 @@ lists a higher version.
   `location ^~ /scribevg/` serves `/var/www/scribevg/` with the ClickOnce MIME types
   (`.application`, `.manifest`, `.deploy`) and `Cache-Control: no-cache`.
 - `pages/index.html`: the landing page; `__VERSION__` is filled in on upload.
+- Sentence audio lives separately at **https://ppdac.ltd/scribevg-audio/**, served from
+  `/var/www/scribevg-audio/` (`location ^~ /scribevg-audio/` in the same nginx server
+  block). That directory is not touched by a ClickOnce upload, which replaces
+  `/var/www/scribevg/` only. Upload clips with `tools/upload-scribevg-audio.sh`.
 
 ## Releasing an update
 
@@ -46,4 +50,16 @@ that changed.
 - Edge opens the `.application` link directly. Chrome and Firefox may download it;
   opening the file or running `setup.exe` works too.
 - Installs are per user. Progress is in `%AppData%\ScribeVG` and survives updates and
-  uninstalls.
+  uninstalls. Downloaded sentence clips are cached in `%LocalAppData%\ScribeVG\audio-cache`.
+
+## Sentence audio
+
+The clips are `{sentenceId}.m4a` files plus `manifest.json` (sizes and SHA-256) and
+`CREDITS.txt`. Pack only the ids flagged in `ScribeVG/Data/sentences.json`, not the
+entire UmaiKanji Audio folder. Source on Louis's PC is usually:
+
+    C:\Users\BHRAGS\OneDrive\Backups\Umai Kanji Archive\Umai Kanji Resources\Audio
+
+`tools/upload-scribevg-audio.sh` sends a tarball through a short-lived private blob
+and extracts it to `/var/www/scribevg-audio/` on cosmic2. After changing nginx,
+run `nginx -t` before a reload.

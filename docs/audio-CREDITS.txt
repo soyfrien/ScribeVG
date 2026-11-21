@@ -1,0 +1,15 @@
+ScribeVG sentence audio
+
+Voice: Emi Asano
+https://www.linkedin.com/in/emi-asano-7b752557/
+
+Recordings copyright Tokibits/PPDAC.
+
+These clips are the example-sentence readings used by ScribeVG
+(https://ppdac.ltd/scribevg/). They are downloaded from
+https://ppdac.ltd/scribevg-audio/ as needed and cached on the
+user's computer.
+
+The Japanese and English sentence text comes from the Tatoeba
+Project (https://tatoeba.org), CC BY 2.0 FR, and is credited
+separately.

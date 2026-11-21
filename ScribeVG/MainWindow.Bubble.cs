@@ -10,7 +10,7 @@ namespace ScribeVG;
 
 /// <summary>
 /// Speech bubble on the big kanji: one example sentence, Emi's voice when a clip is available,
-/// and a quiet text-only look when it isn't (the public build has no audio).
+/// and a quiet text-only look when it isn't.
 /// </summary>
 public partial class MainWindow
 {
@@ -92,10 +92,10 @@ public partial class MainWindow
         {
             var length = a.Japanese.Length.CompareTo(b.Japanese.Length);
             if (length != 0) return length;
-            var aClip = _audio?.Find(a.Id) is not null;
-            var bClip = _audio?.Find(b.Id) is not null;
-            if (aClip != bClip) return aClip ? -1 : 1;
             if (a.HasAudio != b.HasAudio) return a.HasAudio ? -1 : 1;
+            var aLocal = _audio?.Find(a.Id) is not null;
+            var bLocal = _audio?.Find(b.Id) is not null;
+            if (aLocal != bLocal) return aLocal ? -1 : 1;
             return 0;
         });
         return all;
@@ -135,8 +135,7 @@ public partial class MainWindow
         BubbleIndexLabel.Text = $"{_bubbleIndex + 1}/{_bubbleSentences.Count}";
         BubbleNextButton.Visibility = _bubbleSentences.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
 
-        var clip = _audio?.Find(sentence.Id);
-        if (clip is not null)
+        if (sentence.HasAudio)
         {
             BubbleReplayButton.Visibility = Visibility.Visible;
             BubbleReplayButton.IsEnabled = true;
@@ -146,11 +145,8 @@ public partial class MainWindow
         }
         else
         {
-            // Public builds have no audio: keep the bubble looking like a finished text card.
             BubbleReplayButton.Visibility = Visibility.Collapsed;
-            BubbleHint.Text = _audio?.Folder is null
-                ? "Voice clips aren't on this device"
-                : "No recording for this one";
+            BubbleHint.Text = "No recording for this one";
             BubbleHint.Visibility = Visibility.Visible;
         }
 

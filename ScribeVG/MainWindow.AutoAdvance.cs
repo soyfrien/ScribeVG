@@ -69,6 +69,14 @@ public partial class MainWindow
             if (_currentStrokeIndex < _deck[_cardIndex].Strokes.Count) return;
             if (_sheet is { IsComplete: false }) return; // sheet restarted meanwhile
 
+            // If a clip is still being downloaded, wait briefly (give up after 5 s).
+            if (_audioFetchingSince is DateTime fetchSince && DateTime.UtcNow - fetchSince < TimeSpan.FromSeconds(5))
+            {
+                _autoAdvanceTimer = timer;
+                timer.Interval = TimeSpan.FromMilliseconds(250);
+                timer.Start();
+                return;
+            }
             // If Emi is reading a sentence, let her finish (clips are short; give up waiting after 10 s).
             if (_audioPlayingSince is DateTime since && DateTime.UtcNow - since < TimeSpan.FromSeconds(10))
             {

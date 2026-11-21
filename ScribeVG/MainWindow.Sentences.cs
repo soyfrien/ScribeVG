@@ -17,8 +17,13 @@ public partial class MainWindow
     private readonly SentenceLibrary? _sentences = LoadSentences();
     private readonly AppSettings _settings = AppSettings.Load();
     private AudioLocator? _audio;
+    private AudioCache? _cache;
+    private AudioDownloader? _downloader;
+    private CancellationTokenSource? _playCts;
+    private CancellationTokenSource? _prefetchCts;
     private readonly MediaPlayer _player = new();
     private DateTime? _audioPlayingSince; // set while one of Emi's clips is playing
+    private DateTime? _audioFetchingSince; // set while a clip is being downloaded
     private string? _sentenceKanji;
     private int _sentenceOffset;
 
@@ -39,13 +44,21 @@ public partial class MainWindow
     private void InitSentences()
     {
         _audio = new AudioLocator(_settings.AudioFolder);
+        _cache = new AudioCache();
+        _downloader = new AudioDownloader(_settings.EffectiveAudioBaseUrl, _cache);
         _player.MediaFailed += (_, e) =>
         {
             _audioPlayingSince = null;
+            _audioFetchingSince = null;
             AudioStatusLabel.Text = $"Couldn't play that clip: {e.ErrorException?.Message}";
         };
         _player.MediaEnded += (_, _) => _audioPlayingSince = null;
-        Closed += (_, _) => _player.Close();
+        Closed += (_, _) =>
+        {
+            CancelAudioFetches();
+            _player.Close();
+            _downloader?.Dispose();
+        };
     }
 
     /// <summary>Called whenever the shown kanji is (re)drawn; only rebuilds when it changes.</summary>
@@ -83,6 +96,7 @@ public partial class MainWindow
         }
 
         UpdateAudioStatus(all);
+        PrefetchVisible(all);
     }
 
     private static TextBlock Note(string text) => new()
@@ -96,7 +110,6 @@ public partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        var clip = _audio?.Find(sentence.Id);
         var play = new Button
         {
             Content = "▶",
@@ -105,10 +118,9 @@ public partial class MainWindow
             FontSize = 16,
             Margin = new Thickness(0, 0, 10, 0),
             VerticalAlignment = VerticalAlignment.Top,
-            IsEnabled = clip is not null,
-            ToolTip = clip is not null ? "Play Emi Asano's reading" :
-                sentence.HasAudio ? "Recording not found: set the audio folder" : "No recording for this sentence",
-            Tag = clip,
+            IsEnabled = sentence.HasAudio,
+            ToolTip = sentence.HasAudio ? "Play Emi Asano's reading" : "No recording for this sentence",
+            Tag = sentence.Id,
         };
         play.Click += Play_Click;
         Grid.SetColumn(play, 0);
@@ -161,36 +173,93 @@ public partial class MainWindow
 
     private void UpdateAudioStatus(IReadOnlyList<ExampleSentence> shown)
     {
-        if (_audio?.Folder is null)
+        var cached = _cache?.CachedCount() ?? 0;
+        if (_audio?.Folder is not null)
         {
-            AudioStatusLabel.Text = _settings.AudioFolder is not null
-                ? $"No .m4a clips in {_settings.AudioFolder}. Choose the Umai Kanji Audio folder."
-                : "Audio folder not found. Sync OneDrive's Backups\\Umai Kanji Archive or choose the folder.";
+            var missing = shown.Take(SentencesShown).Count(s => s.HasAudio && _audio.Find(s.Id) is null);
+            var source = _audio.FromSettings ? "" : " (found in OneDrive)";
+            AudioStatusLabel.Text = missing > 0
+                ? $"Audio: {_audio.Folder}{source}. Missing clips are downloaded from ppdac.ltd ({cached} cached)."
+                : $"Audio: {_audio.Folder}{source}";
             return;
         }
 
-        var missing = shown.Take(SentencesShown).Count(s => s.HasAudio && _audio.Find(s.Id) is null);
-        var source = _audio.FromSettings ? "" : " (found in OneDrive)";
-        AudioStatusLabel.Text = missing > 0
-            ? $"Audio: {_audio.Folder}{source}. {missing} clip(s) not found there."
-            : $"Audio: {_audio.Folder}{source}";
+        if (_settings.AudioFolder is not null)
+        {
+            AudioStatusLabel.Text =
+                $"No .m4a clips in {_settings.AudioFolder}. Clips will be downloaded from ppdac.ltd ({cached} cached).";
+            return;
+        }
+
+        AudioStatusLabel.Text = $"Audio is downloaded from ppdac.ltd as needed ({cached} clip(s) cached).";
     }
 
-    private void Play_Click(object sender, RoutedEventArgs e)
+    private async void Play_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: string path }) return;
-        PlayClip(path, announceErrors: true);
+        if (sender is not Button { Tag: int id } button) return;
+        var previous = button.Content;
+        button.Content = "…";
+        button.IsEnabled = false;
+        try
+        {
+            await PlaySentenceAudioAsync(id, announceErrors: true);
+        }
+        finally
+        {
+            button.Content = previous;
+            button.IsEnabled = true;
+        }
     }
 
-    /// <summary>Stop any clip that's playing, then play this sentence's recording if it exists.</summary>
+    /// <summary>Stop any clip that's playing, then play this sentence's recording if it can be found or downloaded.</summary>
     private void PlaySentenceAudio(ExampleSentence sentence)
     {
-        PlayClip(_audio?.Find(sentence.Id), announceErrors: false);
+        _ = PlaySentenceAudioAsync(sentence.Id, announceErrors: false);
+    }
+
+    private async Task PlaySentenceAudioAsync(int sentenceId, bool announceErrors)
+    {
+        StopSentenceAudio();
+        var cts = new CancellationTokenSource();
+        _playCts = cts;
+        _audioFetchingSince = DateTime.UtcNow;
+        try
+        {
+            var path = _audio?.Find(sentenceId);
+            if (path is null && _downloader is not null)
+            {
+                path = await _downloader.GetAsync(sentenceId, cts.Token);
+            }
+            if (cts.IsCancellationRequested) return;
+            _audioFetchingSince = null;
+            if (path is null || !File.Exists(path))
+            {
+                if (announceErrors)
+                {
+                    AudioStatusLabel.Text = "Couldn't get that clip. You may be offline.";
+                }
+                return;
+            }
+            PlayClip(path, announceErrors);
+        }
+        catch (OperationCanceledException)
+        {
+            _audioFetchingSince = null;
+        }
+        catch (Exception ex)
+        {
+            _audioFetchingSince = null;
+            if (announceErrors)
+            {
+                AudioStatusLabel.Text = $"Couldn't play that clip: {ex.Message}";
+            }
+        }
     }
 
     private void PlayClip(string? path, bool announceErrors)
     {
-        StopSentenceAudio();
+        try { _player.Stop(); }
+        catch (Exception) { /* nothing was open */ }
         if (path is null || !File.Exists(path)) return;
         try
         {
@@ -210,9 +279,62 @@ public partial class MainWindow
 
     private void StopSentenceAudio()
     {
+        CancelPlayFetch();
+        _audioFetchingSince = null;
         try { _player.Stop(); }
         catch (Exception) { /* nothing was open */ }
         _audioPlayingSince = null;
+    }
+
+    private void CancelPlayFetch()
+    {
+        try { _playCts?.Cancel(); }
+        catch (Exception) { /* already cancelled */ }
+        _playCts?.Dispose();
+        _playCts = null;
+    }
+
+    private void CancelAudioFetches()
+    {
+        CancelPlayFetch();
+        try { _prefetchCts?.Cancel(); }
+        catch (Exception) { /* already cancelled */ }
+        _prefetchCts?.Dispose();
+        _prefetchCts = null;
+        _audioFetchingSince = null;
+    }
+
+    private void PrefetchVisible(IReadOnlyList<ExampleSentence> shown)
+    {
+        try { _prefetchCts?.Cancel(); }
+        catch (Exception) { /* already cancelled */ }
+        _prefetchCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _prefetchCts = cts;
+        if (_downloader is null) return;
+
+        var ids = shown.Take(SentencesShown)
+            .Where(s => s.HasAudio && _audio?.Find(s.Id) is null)
+            .Select(s => s.Id)
+            .ToList();
+        if (ids.Count == 0) return;
+        _ = PrefetchSafeAsync(ids, cts.Token);
+    }
+
+    private async Task PrefetchSafeAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _downloader!.PrefetchAsync(ids, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // The user moved on; leftover downloads can stop.
+        }
+        catch (Exception)
+        {
+            // Prefetch is best-effort.
+        }
     }
 
     private void MoreSentences_Click(object sender, RoutedEventArgs e)
@@ -242,6 +364,23 @@ public partial class MainWindow
         try { _settings.Save(); }
         catch (Exception ex) { StatusLabel.Text = $"Couldn't save settings: {ex.Message}"; }
         _audio = new AudioLocator(resolved);
+        ShowSentences(_sentenceKanji, force: true);
+    }
+
+    private void ClearAudioCache_Click(object sender, RoutedEventArgs e)
+    {
+        StopSentenceAudio();
+        try { _player.Close(); }
+        catch (Exception) { /* nothing was open */ }
+        try
+        {
+            _cache?.Clear();
+        }
+        catch (Exception ex)
+        {
+            AudioStatusLabel.Text = $"Couldn't clear the audio cache: {ex.Message}";
+            return;
+        }
         ShowSentences(_sentenceKanji, force: true);
     }
 }

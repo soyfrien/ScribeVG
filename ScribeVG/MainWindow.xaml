@@ -140,10 +140,16 @@
                     </CheckBox>
                     <TextBlock x:Name="AudioStatusLabel" FontSize="12" TextWrapping="Wrap"
                                Foreground="#FF888888"/>
-                    <Button Content="Set audio folder…" HorizontalAlignment="Left"
-                            ToolTip="Choose the folder with Emi Asano's recordings (Umai Kanji Resources\Audio)"
-                            FontSize="13" Padding="10,2" MinHeight="32" Margin="0,6,0,0"
-                            Click="SetAudioFolder_Click"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="Set audio folder…" HorizontalAlignment="Left"
+                                ToolTip="Choose the folder with Emi Asano's recordings (Umai Kanji Resources\Audio)"
+                                FontSize="13" Padding="10,2" MinHeight="32" Margin="0,0,8,0"
+                                Click="SetAudioFolder_Click"/>
+                        <Button Content="Clear audio cache" HorizontalAlignment="Left"
+                                ToolTip="Delete downloaded clips. They will be fetched again from the Internet when needed."
+                                FontSize="13" Padding="10,2" MinHeight="32"
+                                Click="ClearAudioCache_Click"/>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>
