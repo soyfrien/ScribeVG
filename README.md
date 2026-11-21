@@ -15,9 +15,13 @@ A Windows touchscreen app for practicing kanji handwriting. Write each stroke an
 - Tap the big kanji for a speech bubble with an example sentence, and Emi's voice when a clip is available
 - Auto-advance, visual feedback and a practice-paper look
 
+## Install
+
+Install from **[soyfrien.github.io/ScribeVG](https://soyfrien.github.io/ScribeVG/)** and ScribeVG updates itself: it checks for a new version each time it starts. The Install link works directly in Edge; in Chrome or Firefox, open the downloaded file or use `setup.exe` from the same page. It installs for your Windows account only, with no admin rights needed. The app isn't code-signed yet, so Windows will say the publisher is unknown. Your progress is kept in `%AppData%\ScribeVG` and carries over between updates.
+
 ## Download
 
-Get the latest Windows build from [Releases](https://github.com/soyfrien/ScribeVG/releases). It's self-contained, so you don't need to install .NET; just unzip and run `ScribeVG.exe`.
+Prefer a portable copy? Get the latest Windows build from [Releases](https://github.com/soyfrien/ScribeVG/releases). It's self-contained, so you don't need to install .NET; just unzip and run `ScribeVG.exe`.
 
 ## Build
 

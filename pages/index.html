@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install ScribeVG</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  body { font-family: "Segoe UI", system-ui, sans-serif; background: #f7f3ea; color: #2b2622; margin: 0; }
+  main { max-width: 640px; margin: 0 auto; padding: 48px 24px; }
+  h1 { display: flex; align-items: center; gap: 16px; font-size: 2.2rem; margin: 0 0 8px; }
+  h1 img { width: 72px; height: 72px; }
+  .install { display: inline-block; margin: 24px 0 8px; padding: 18px 36px; font-size: 1.4rem; font-weight: 600;
+             background: #b8342a; color: #fff; text-decoration: none; border-radius: 10px; }
+  .install:hover { background: #9c2a22; }
+  .note { background: #fff; border-left: 4px solid #d9a441; padding: 12px 16px; margin: 24px 0; border-radius: 4px; }
+  .muted { color: #6b625a; font-size: 0.95rem; }
+  a { color: #9c2a22; }
+  h2 { font-size: 1.15rem; margin-top: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1><img src="icon.svg" alt="">ScribeVG</h1>
+  <p>A Windows touchscreen app for practicing kanji handwriting, with stroke-by-stroke scoring and FSRS spaced repetition.</p>
+
+  <a class="install" href="ScribeVG.application">Install ScribeVG</a>
+  <p class="muted">Version __VERSION__ · Windows 10/11, 64-bit · no .NET install needed</p>
+  <p>Link doesn't start the installer? Download <a href="setup.exe">setup.exe</a> and run it instead.</p>
+
+  <div class="note">
+    <strong>About the warnings.</strong> ScribeVG isn't code-signed yet, so Windows says the publisher is unknown and
+    SmartScreen may show "Windows protected your PC". Click <em>More info</em> → <em>Run anyway</em>, then <em>Install</em>.
+  </div>
+
+  <h2>How it works</h2>
+  <p>The Install link works directly in Microsoft Edge. Chrome and Firefox may just download <code>ScribeVG.application</code>
+     instead; open the downloaded file, or use <a href="setup.exe">setup.exe</a>.
+     ScribeVG installs for your Windows account only (no admin rights), adds a Start menu entry, and checks for updates
+     each time it starts. Your progress lives in <code>%AppData%\ScribeVG</code> and carries over between updates.</p>
+
+  <h2>Credits</h2>
+  <ul class="muted">
+    <li>Stroke data: <a href="https://kanjivg.tagaini.net">KanjiVG</a> by Ulrich Apel and contributors, CC BY-SA 3.0</li>
+    <li>Kanji meanings, readings and grades: <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project">KANJIDIC2</a> from the Electronic Dictionary Research and Development Group, CC BY-SA 4.0</li>
+    <li>Example sentences: the <a href="https://tatoeba.org">Tatoeba Project</a>, CC BY 2.0 FR</li>
+  </ul>
+  <p class="muted">By Louis Waweru · MIT licensed · <a href="https://github.com/soyfrien/ScribeVG">Source on GitHub</a> · <a href="https://github.com/soyfrien/ScribeVG/releases">Zip downloads</a></p>
+</main>
+</body>
+</html>
