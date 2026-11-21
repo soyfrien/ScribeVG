@@ -17,7 +17,7 @@ A Windows touchscreen app for practicing kanji handwriting. Write each stroke an
 
 ## Install
 
-Install from **[soyfrien.github.io/ScribeVG](https://soyfrien.github.io/ScribeVG/)** and ScribeVG updates itself: it checks for a new version each time it starts. The Install link works directly in Edge; in Chrome or Firefox, open the downloaded file or use `setup.exe` from the same page. It installs for your Windows account only, with no admin rights needed. The app isn't code-signed yet, so Windows will say the publisher is unknown. Your progress is kept in `%AppData%\ScribeVG` and carries over between updates.
+Install from **[ppdac.ltd/scribevg](https://ppdac.ltd/scribevg/)** and ScribeVG updates itself: it checks for a new version each time it starts. The Install link works directly in Edge; in Chrome or Firefox, open the downloaded file or use `setup.exe` from the same page. It installs for your Windows account only, with no admin rights needed. The app isn't code-signed yet, so Windows will say the publisher is unknown. Your progress is kept in `%AppData%\ScribeVG` and carries over between updates.
 
 ## Download
 
