@@ -10,6 +10,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationTitle>ScribeVG</ApplicationTitle>
     <ApplicationIcon>Assets\ScribeVG.ico</ApplicationIcon>
+    <Company>PPDAC LTD [Louis Waweru]</Company>
     <RootNamespace>ScribeVG</RootNamespace>
     <Version>0.2.0</Version>
   </PropertyGroup>
@@ -23,5 +24,28 @@
     <Content Include="Data\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Data\**\*.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!--
+    ApplicationIcon keeps the Win32/.exe icon and the pack:// window icon at Assets\ScribeVG.ico.
+    ClickOnce's default TargetPath is that same relative path, and Installed Apps often
+    misses an icon sitting under a subfolder. Publish it next to the exe as ScribeVG.ico.
+  -->
+  <Target Name="CopyAppIconToOutputRoot" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\ScribeVG.ico"
+          DestinationFiles="$(TargetDir)ScribeVG.ico"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="UseRootClickOnceIcon"
+          BeforeTargets="_DeploymentComputeClickOnceManifestInfo;GenerateApplicationManifest">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Assets\ScribeVG.ico"
+          DestinationFiles="$(TargetDir)ScribeVG.ico"
+          SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <_DeploymentManifestIconFile Remove="@(_DeploymentManifestIconFile)" />
+      <_DeploymentManifestIconFile Include="Assets\ScribeVG.ico">
+        <TargetPath>ScribeVG.ico</TargetPath>
+      </_DeploymentManifestIconFile>
+    </ItemGroup>
+  </Target>
 
 </Project>

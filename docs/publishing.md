@@ -9,6 +9,8 @@ lists a higher version.
 - `ScribeVG/Properties/PublishProfiles/ClickOnce.pubxml`: self-contained win-x64, web
   install, update check before startup, unsigned manifests. The version is
   `<Version>` from the .csproj plus a revision: `0.2.0.1`, `0.2.0.2`, and so on.
+  Publisher is `PPDAC LTD [Louis Waweru]`; product name stays ScribeVG. The app
+  icon is `ScribeVG.ico` at the publish root (see `ApplicationIcon` in the csproj).
 - cosmic2 (nginx, `/etc/nginx/sites-enabled/000-default`, ppdac.ltd server block):
   `location ^~ /scribevg/` serves `/var/www/scribevg/` with the ClickOnce MIME types
   (`.application`, `.manifest`, `.deploy`) and `Cache-Control: no-cache`.
