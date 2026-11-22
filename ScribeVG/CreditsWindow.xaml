@@ -1,0 +1,79 @@
+<Window x:Class="ScribeVG.CreditsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Credits"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="#FFE8F0E6"
+        Icon="pack://application:,,,/Assets/ScribeVG.ico"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <Style TargetType="Hyperlink">
+            <Setter Property="Foreground" Value="#FF3F8F5F"/>
+        </Style>
+        <Style x:Key="CreditLine" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Foreground" Value="#FF333333"/>
+        </Style>
+    </Window.Resources>
+    <Border Background="{StaticResource CanvasBackground}"
+            BorderBrush="{StaticResource NotebookFrameBrush}"
+            BorderThickness="2.5"
+            CornerRadius="12"
+            Padding="22,18"
+            Margin="16">
+        <StackPanel MaxWidth="440">
+            <TextBlock Text="Credits" FontSize="18" FontWeight="SemiBold"
+                       Foreground="#FF2B2622" Margin="0,0,0,14"/>
+
+            <TextBlock Style="{StaticResource CreditLine}"
+                       Text="ScribeVG by Louis Waweru, PPDAC LTD / Tokibits, the open-source successor to UmaiKanji."/>
+
+            <TextBlock Style="{StaticResource CreditLine}">
+                <Run Text="Sentence audio: recorded by "/>
+                <Hyperlink NavigateUri="https://www.linkedin.com/in/emi-asano-7b752557/"
+                           RequestNavigate="Hyperlink_RequestNavigate"
+                           AutomationProperties.Name="Emi Asano on LinkedIn">Emi Asano</Hyperlink>
+                <Run Text=". Recordings copyright Tokibits/PPDAC."/>
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource CreditLine}">
+                <Run Text="Example sentences: the "/>
+                <Hyperlink NavigateUri="https://tatoeba.org"
+                           RequestNavigate="Hyperlink_RequestNavigate">Tatoeba Project</Hyperlink>
+                <Run Text=", CC BY 2.0 FR."/>
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource CreditLine}">
+                <Run Text="Stroke data: "/>
+                <Hyperlink NavigateUri="https://kanjivg.tagaini.net"
+                           RequestNavigate="Hyperlink_RequestNavigate">KanjiVG</Hyperlink>
+                <Run Text=" by Ulrich Apel and contributors, CC BY-SA 3.0."/>
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource CreditLine}">
+                <Run Text="Kanji meanings, readings and grades: "/>
+                <Hyperlink NavigateUri="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project"
+                           RequestNavigate="Hyperlink_RequestNavigate">KANJIDIC2</Hyperlink>
+                <Run Text=" from the Electronic Dictionary Research and Development Group, CC BY-SA 4.0."/>
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource CreditLine}" Margin="0,0,0,16"
+                       Text="The code is MIT; see LICENSE.txt. The bundled data and the sentence recordings keep the licenses listed above."/>
+
+            <Button Content="Close"
+                    Click="Close_Click"
+                    IsCancel="True"
+                    IsDefault="True"
+                    HorizontalAlignment="Right"
+                    FontSize="14"
+                    Padding="16,4"
+                    MinHeight="32"
+                    MinWidth="88"/>
+        </StackPanel>
+    </Border>
+</Window>
