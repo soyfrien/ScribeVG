@@ -18,7 +18,7 @@ $proj = Join-Path $Source 'ScribeVG\ScribeVG.csproj'
 $out = Join-Path $Source 'ScribeVG\bin\publish\clickonce'
 if (Test-Path $out) { Remove-Item $out -Recurse -Force }
 
-& $msbuild $proj /restore /t:Publish /p:Configuration=Release /p:PublishProfile=ClickOnce "/p:ApplicationRevision=$Revision" /v:minimal /nologo
+& $msbuild $proj /restore /t:Publish /p:Configuration=Release /p:PublishProfile=ClickOnce "/p:ApplicationRevision=$Revision" "/p:Version=0.2.0.$Revision" /v:minimal /nologo
 if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE" }
 
 foreach ($f in @('ScribeVG.application', 'setup.exe')) {

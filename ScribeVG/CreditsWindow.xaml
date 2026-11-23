@@ -65,7 +65,11 @@
             <TextBlock Style="{StaticResource CreditLine}" Margin="0,0,0,16"
                        Text="The code is MIT; see LICENSE.txt. The bundled data and the sentence recordings keep the licenses listed above."/>
 
-            <Button Content="Close"
+            <Grid>
+                <TextBlock x:Name="VersionLabel" VerticalAlignment="Center"
+                           FontSize="12" Foreground="#FF777777"
+                           AutomationProperties.Name="Version"/>
+                <Button Content="Close"
                     Click="Close_Click"
                     IsCancel="True"
                     IsDefault="True"
@@ -74,6 +78,7 @@
                     Padding="16,4"
                     MinHeight="32"
                     MinWidth="88"/>
+            </Grid>
         </StackPanel>
     </Border>
 </Window>
