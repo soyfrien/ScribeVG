@@ -146,7 +146,7 @@
                                 FontSize="13" Padding="10,2" MinHeight="32" Margin="0,0,8,0"
                                 Click="SetAudioFolder_Click"/>
                         <Button Content="Clear audio cache" HorizontalAlignment="Left"
-                                ToolTip="Delete downloaded clips. They will be fetched again from the Internet when needed."
+                                ToolTip="Delete unpacked clips. They are unpacked again from the built-in recordings when needed."
                                 FontSize="13" Padding="10,2" MinHeight="32"
                                 Click="ClearAudioCache_Click"/>
                     </StackPanel>

@@ -17,7 +17,7 @@ ScribeVG is the open-source successor to UmaiKanji by Tokibits, a [PPDAC](https:
 - Meanings stay hidden until you finish, so you have to recall them
 - Example sentences for about 1,900 kanji, with Emi Asano's readings
 - Tap the big kanji for a speech bubble with an example sentence, and Emi's voice when a clip is available
-- Sentence audio is downloaded from the Internet on first play and cached on your computer, so the install stays small
+- Sentence audio recorded by Emi Asano is built into the app and works offline
 - Auto-advance, visual feedback and a practice-paper look
 
 Your progress is kept in `%AppData%\ScribeVG` and carries over between updates.

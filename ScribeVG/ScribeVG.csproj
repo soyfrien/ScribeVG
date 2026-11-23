@@ -23,6 +23,8 @@
     <Content Include="Data\**\*.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Data\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Data\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Emi Asano's clips; not in git. Build with tools/build_audio_pack.py before publishing. -->
+    <Content Include="Data\audio.svpak" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Data\audio.svpak')" />
   </ItemGroup>
 
   <!--

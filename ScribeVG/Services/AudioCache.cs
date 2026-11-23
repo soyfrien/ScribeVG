@@ -4,8 +4,8 @@ using System.Security.Cryptography;
 namespace ScribeVG.Services;
 
 /// <summary>
-/// Downloaded sentence clips, kept in <c>%LocalAppData%\ScribeVG\audio-cache</c>
-/// so they survive ClickOnce updates and stay out of roaming AppData.
+/// Sentence clips unpacked from <see cref="AudioPack"/>, kept in <c>%LocalAppData%\ScribeVG\audio-cache</c>
+/// so MediaPlayer can open them as files. They survive updates and stay out of roaming AppData.
 /// </summary>
 public sealed class AudioCache
 {

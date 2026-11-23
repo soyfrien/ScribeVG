@@ -363,3 +363,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Bundled sentence audio (copyright Tokibits/PPDAC); built locally by tools/build_audio_pack.py
+ScribeVG/Data/audio.svpak
+*.svpak.tmp

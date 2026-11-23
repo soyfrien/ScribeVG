@@ -9,18 +9,6 @@ public sealed class AppSettings
     /// <summary>Folder holding Emi Asano's <c>{id}.m4a</c> clips, if the user picked one.</summary>
     public string? AudioFolder { get; set; }
 
-    /// <summary>
-    /// Base URL for clips hosted on the Internet. Null or blank means
-    /// <see cref="DefaultAudioBaseUrl"/>.
-    /// </summary>
-    public string? AudioBaseUrl { get; set; }
-
-    public const string DefaultAudioBaseUrl = AudioDownloader.DefaultBaseUrl;
-
-    /// <summary>The base URL actually used (no trailing slash).</summary>
-    public string EffectiveAudioBaseUrl =>
-        AudioDownloader.Normalize(AudioBaseUrl) ?? DefaultAudioBaseUrl;
-
     /// <summary>Move to the next card automatically after finishing a kanji with a high enough average.</summary>
     public bool AutoAdvance { get; set; } = true;
 

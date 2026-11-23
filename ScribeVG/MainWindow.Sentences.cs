@@ -18,12 +18,12 @@ public partial class MainWindow
     private readonly AppSettings _settings = AppSettings.Load();
     private AudioLocator? _audio;
     private AudioCache? _cache;
-    private AudioDownloader? _downloader;
+    private AudioPack? _pack;
     private CancellationTokenSource? _playCts;
     private CancellationTokenSource? _prefetchCts;
     private readonly MediaPlayer _player = new();
     private DateTime? _audioPlayingSince; // set while one of Emi's clips is playing
-    private DateTime? _audioFetchingSince; // set while a clip is being downloaded
+    private DateTime? _audioFetchingSince; // set while a clip is being unpacked
     private string? _sentenceKanji;
     private int _sentenceOffset;
 
@@ -45,7 +45,7 @@ public partial class MainWindow
     {
         _audio = new AudioLocator(_settings.AudioFolder);
         _cache = new AudioCache();
-        _downloader = new AudioDownloader(_settings.EffectiveAudioBaseUrl, _cache);
+        _pack = AudioPack.TryOpen();
         _player.MediaFailed += (_, e) =>
         {
             _audioPlayingSince = null;
@@ -57,7 +57,6 @@ public partial class MainWindow
         {
             CancelAudioFetches();
             _player.Close();
-            _downloader?.Dispose();
         };
     }
 
@@ -173,25 +172,25 @@ public partial class MainWindow
 
     private void UpdateAudioStatus(IReadOnlyList<ExampleSentence> shown)
     {
-        var cached = _cache?.CachedCount() ?? 0;
         if (_audio?.Folder is not null)
         {
             var missing = shown.Take(SentencesShown).Count(s => s.HasAudio && _audio.Find(s.Id) is null);
             var source = _audio.FromSettings ? "" : " (found in OneDrive)";
-            AudioStatusLabel.Text = missing > 0
-                ? $"Audio: {_audio.Folder}{source}. Missing clips are downloaded from ppdac.ltd ({cached} cached)."
+            AudioStatusLabel.Text = missing > 0 && _pack is not null
+                ? $"Audio: {_audio.Folder}{source}. Missing clips come from the built-in recordings."
                 : $"Audio: {_audio.Folder}{source}";
             return;
         }
 
-        if (_settings.AudioFolder is not null)
+        if (_pack is null)
         {
-            AudioStatusLabel.Text =
-                $"No .m4a clips in {_settings.AudioFolder}. Clips will be downloaded from ppdac.ltd ({cached} cached).";
+            AudioStatusLabel.Text = "The built-in recordings are missing from this install. Use Set audio folder to pick them.";
             return;
         }
 
-        AudioStatusLabel.Text = $"Audio is downloaded from ppdac.ltd as needed ({cached} clip(s) cached).";
+        AudioStatusLabel.Text = _settings.AudioFolder is not null
+            ? $"No .m4a clips in {_settings.AudioFolder}. Using the built-in recordings."
+            : "Recordings by Emi Asano are built in and work offline.";
     }
 
     private async void Play_Click(object sender, RoutedEventArgs e)
@@ -211,7 +210,7 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Stop any clip that's playing, then play this sentence's recording if it can be found or downloaded.</summary>
+    /// <summary>Stop any clip that's playing, then play this sentence's recording from the audio folder or the built-in pack.</summary>
     private void PlaySentenceAudio(ExampleSentence sentence)
     {
         _ = PlaySentenceAudioAsync(sentence.Id, announceErrors: false);
@@ -226,9 +225,9 @@ public partial class MainWindow
         try
         {
             var path = _audio?.Find(sentenceId);
-            if (path is null && _downloader is not null)
+            if (path is null && _pack is not null && _cache is not null)
             {
-                path = await _downloader.GetAsync(sentenceId, cts.Token);
+                path = await _pack.GetAsync(sentenceId, _cache, cts.Token);
             }
             if (cts.IsCancellationRequested) return;
             _audioFetchingSince = null;
@@ -236,7 +235,7 @@ public partial class MainWindow
             {
                 if (announceErrors)
                 {
-                    AudioStatusLabel.Text = "Couldn't get that clip. You may be offline.";
+                    AudioStatusLabel.Text = "Couldn't find a recording for that sentence.";
                 }
                 return;
             }
@@ -311,10 +310,10 @@ public partial class MainWindow
         _prefetchCts?.Dispose();
         var cts = new CancellationTokenSource();
         _prefetchCts = cts;
-        if (_downloader is null) return;
+        if (_pack is null || _cache is null) return;
 
         var ids = shown.Take(SentencesShown)
-            .Where(s => s.HasAudio && _audio?.Find(s.Id) is null)
+            .Where(s => s.HasAudio && _audio?.Find(s.Id) is null && _pack.Contains(s.Id))
             .Select(s => s.Id)
             .ToList();
         if (ids.Count == 0) return;
@@ -325,11 +324,15 @@ public partial class MainWindow
     {
         try
         {
-            await _downloader!.PrefetchAsync(ids, cancellationToken);
+            foreach (var id in ids)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await _pack!.GetAsync(id, _cache!, cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {
-            // The user moved on; leftover downloads can stop.
+            // The user moved on; leftover unpacking can stop.
         }
         catch (Exception)
         {

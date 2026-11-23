@@ -59,6 +59,15 @@ that changed.
 
 ## Sentence audio
 
+As of Nov 23, 2026 the clips ship inside the app as `ScribeVG/Data/audio.svpak` (kept out of git).
+Build it before every ClickOnce or Store publish:
+
+    python3 tools/build_audio_pack.py <Audio folder or scribevg-audio.tgz>
+
+The app unpacks clips into `%LocalAppData%\ScribeVG\audio-cache` on first play. The cosmic2
+hosting below is legacy and only serves installs older than 0.2.0.5.
+
+
 The clips are `{sentenceId}.m4a` files plus `manifest.json` (sizes and SHA-256) and
 `CREDITS.txt`. Pack only the ids flagged in `ScribeVG/Data/sentences.json`, not the
 entire UmaiKanji Audio folder. Source on Louis's PC is usually:
